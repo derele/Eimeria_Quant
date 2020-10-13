@@ -1,6 +1,7 @@
 ###Mice infection experiment summary
 library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
-library("ggplot2")
+
+## library(ggplot2)
 library("data.table")
 library("tidyverse")
 require("ggpubr")
@@ -82,3 +83,4 @@ mean(tab1$Age)
 
 rm(tab1)
 
+### Hmmm.. why is tab1 created? Probably okay to remove all that code??

@@ -273,28 +273,28 @@ std_br<- lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Task=="Sta
 summary(std_br)
 
 ### Figure 1 Final Standard curves 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_1.pdf", width = 8, height = 10)
+pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
 grid.arrange(A, B)
 dev.off()
 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_1.1.pdf", width = 10, height = 10)
+pdf(file = "fig/Figure_1.1.pdf", width = 10, height = 10)
 grid.arrange(A, B, C)
 dev.off()
 rm(A,B,C)
 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_1.2.pdf", width = 10, height = 8)
+pdf(file = "fig/Figure_1.2.pdf", width = 10, height = 8)
 grid.arrange(A1)
 dev.off()
 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_1.3.pdf", width = 10, height = 8)
+pdf(file = "fig/Figure_1.3.pdf", width = 10, height = 8)
 grid.arrange(B1)
 dev.off()
 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_1.4.pdf", width = 10, height = 8)
+pdf(file = "fig/Figure_1.4.pdf", width = 10, height = 8)
 grid.arrange(A2)
 dev.off()
 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_1.5.pdf", width = 10, height = 8)
+pdf(file = "fig/Figure_1.5.pdf", width = 10, height = 8)
 grid.arrange(A3)
 dev.off()
 
@@ -408,7 +408,7 @@ ggplot(data.unk.lm, aes(x = Oocyst_count, y = predicted.Gc)) +
 
 summary(glm(formula = log10(predicted.Gc)~log10(Oocyst_count)+Parasite+Strain+Cycler, data = data.unk.lm))
 
-pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_2.1.pdf", width = 10, height = 8)
+pdf(file = "fig/Figure_2.1.pdf", width = 10, height = 8)
 grid.arrange(D1)
 dev.off()
 
@@ -519,7 +519,7 @@ if(Mock){
           #legend.key.size = unit(0.25, "cm"),
           #legend.key.width = unit(0.15,"cm"))
   
-  pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_2.2.pdf", width = 10, height = 8)
+  pdf(file = "fig/Figure_2.2.pdf", width = 10, height = 8)
   grid.arrange(E)
   dev.off()
   
@@ -560,7 +560,7 @@ if(Mock){
     labs(tag = "C)")+
     annotation_logticks(sides = "bl")-> G
   
-  pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_2.pdf", width = 20, height = 15)
+  pdf(file = "fig/Figure_2.pdf", width = 20, height = 15)
   grid.arrange(D,E,G, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
   dev.off()
   rm(data.mock, data.unk, data.std, D, E, G)

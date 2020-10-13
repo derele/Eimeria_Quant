@@ -459,21 +459,6 @@ ts.data%>%
 require("fitdistrplus")
 require("logspline")
 
-x <- round(ts.data$Sum_Oocysts)
-x <- round(ts.data$Max_Oocysts)
-x <- round(ts.data$OPG.6)
-x <- ts.data$Genome_copies_mean.0
-x <- ts.data$Genome_copies_mean.1
-x <- ts.data$Genome_copies_mean.2
-x <- ts.data$Genome_copies_mean.3
-x <- ts.data$Genome_copies_mean.4
-x <- ts.data$Genome_copies_mean.5
-x <- ts.data$Genome_copies_mean.6
-x <- ts.data$Genome_copies_mean.7
-x <- ts.data$Genome_copies_mean.8
-x <- ts.data$Genome_copies_mean.9
-x <- ts.data$Genome_copies_mean.10
-
 plotdist(x, histo = TRUE, demp = TRUE)
 descdist(x, boot = 1000)
 fn <- fitdist(x, "norm")
