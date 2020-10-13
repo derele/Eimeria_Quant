@@ -1,34 +1,38 @@
 ###Mice infection experiment summary
-library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
+## library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
 
 ## library(ggplot2)
-library("data.table")
-library("tidyverse")
-require("ggpubr")
-library("dplyr")
-library("plyr")
-library("vegan")
-library("gridExtra")
-library("grid")
-library("lattice")
-library("pheatmap")
-library("viridisLite")
-#library("rcompanion")
-#library("FSA")
-library("phyloseq")
+## library("data.table")
+## library("tidyverse")
+## require("ggpubr")
+## library("dplyr")
+## library("plyr")
+## library("vegan")
+## library("gridExtra")
+## library("grid")
+## library("lattice")
+## library("pheatmap")
+## library("viridisLite")
+## #library("rcompanion")
+## #library("FSA")
+## library("phyloseq")
+
+
+## RUN THESE SCRIPTS ALL FROM THE ROOT OF THE REPO!!
+## use only RELATIVE PATHs!
 
 ##Load data
-sample.data <- read.csv("/SAN/Victors_playground/Eimeria_microbiome/sample_data_infb_Exp005.csv")
-exp.des <- read.csv("/SAN/Victors_playground/Eimeria_microbiome/Inf1b_Exp005.DESIGN.csv")
+sample.data <- read.csv("data/sample_data_infb_Exp005.csv")
+exp.des <- read.csv("data/Inf1b_Exp005.DESIGN.csv")
 exp.des$InfectionStrain <- NULL
 exp.des$Departure <- NULL
 exp.des$NOTE <- NULL
   
   ###Use function from Alice to calculate OPG
-  calculateOPG <- function(sample.data){
+calculateOPG <- function(sample.data){
     sample.data$mean_Neubauer <- 
-      (sample.data$oocyst_sq1 + sample.data$oocyst_sq2 + sample.data$oocyst_sq3 + sample.data$oocyst_sq4) / 4
-    # NB! Limit of detection = 1 oocysts
+        (sample.data$oocyst_sq1 + sample.data$oocyst_sq2 + sample.data$oocyst_sq3 + sample.data$oocyst_sq4) / 4
+                                        # NB! Limit of detection = 1 oocysts
     sample.data$mean_Neubauer[sample.data$oocyst_sq1 + sample.data$oocyst_sq2 + sample.data$oocyst_sq3 + sample.data$oocyst_sq4 == 1] <- 0
     sample.data$oocysts.per.tube <- sample.data$mean_Neubauer * 10000 * sample.data$dilution
     sample.data$OPG <- sample.data$oocysts.per.tube / sample.data$fecweight_flot
@@ -36,7 +40,7 @@ exp.des$NOTE <- NULL
     sample.data$oocysts.per.tube[sample.data$fecweight_flot == 0 & sample.data$mean_Neubauer == 0] <- 0
     sample.data$OPG[sample.data$fecweight_flot == 0 & sample.data$mean_Neubauer == 0] <- 0
     return(sample.data)
-  }
+}
   
 sample.data<- calculateOPG(sample.data = sample.data)
   
@@ -61,26 +65,3 @@ sample.data %>%
 sample.data$labels<- as.vector(sample.data$labels)
 rownames(sample.data) <- make.unique(sample.data$labels)
 
-### Table 1:Infection experiment design
-sample.data%>%
-  dplyr::group_by(EH_ID)%>%
-  dplyr::summarise(Weight= mean(weight_dpi0), Sex= Sex, Age= mean(ageAtdpi0expe1a), Strain= Strain)%>%
-  dplyr::distinct()-> tab1
-
-min(tab1$Weight)
-min(tab1$Age)
-
-max(tab1$Weight)
-max(tab1$Age)
-
-mean(tab1$Weight)
-mean(tab1$Age)
-
-##7 females, 15 males
-
-#write.csv(tab1, "/SAN/Victors_playground/Eimeria_microbiome/Table_1_Experiment_Setting_Summary.csv", row.names = F) 
-##For now later change it to the repo
-
-rm(tab1)
-
-### Hmmm.. why is tab1 created? Probably okay to remove all that code??
