@@ -1,25 +1,7 @@
-###Mice infection experiment summary
-## library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
-
-## library(ggplot2)
-## library("data.table")
-## library("tidyverse")
-## require("ggpubr")
-## library("dplyr")
-## library("plyr")
-## library("vegan")
-## library("gridExtra")
-## library("grid")
-## library("lattice")
-## library("pheatmap")
-## library("viridisLite")
-## #library("rcompanion")
-## #library("FSA")
-## library("phyloseq")
-
-
 ## RUN THESE SCRIPTS ALL FROM THE ROOT OF THE REPO!!
 ## use only RELATIVE PATHs!
+
+library(tidyverse)
 
 ##Load data
 sample.data <- read.csv("data/sample_data_infb_Exp005.csv")
@@ -42,7 +24,7 @@ calculateOPG <- function(sample.data){
     return(sample.data)
 }
   
-sample.data<- calculateOPG(sample.data = sample.data)
+sample.data <- calculateOPG(sample.data = sample.data)
   
 ##Check for spaces
 sample.data$EH_ID <- gsub(pattern = " ", replacement = "", x = sample.data$EH_ID)
