@@ -1,1 +1,1 @@
-Eimeria_Microbiome
+Intensity of Eimeria infection quantified by DNA and from oocyst counts.
