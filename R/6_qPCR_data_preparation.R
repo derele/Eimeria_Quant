@@ -1,72 +1,72 @@
 ## Code for 
 ## 1) Standard curve of qPCR Eimeria
 ## 2) Determine Eimeria amount for infection experiment samples
-library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
-library("ggplot2")
-library("data.table")
-library("tidyverse")
-require("ggpubr")
-library("dplyr")
-library("plyr")
-library("vegan")
-library("gridExtra")
-library("grid")
-library("lattice")
-library("pheatmap")
-library("viridisLite")
 
-Standards<- T
-Unknowns<- F
-Mock<- F
-Infexp<- T
+## library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
+## library("ggplot2")
+## library("data.table")
+## library("tidyverse")
+## require("ggpubr")
+## library("dplyr")
+## library("plyr")
+## library("vegan")
+## library("gridExtra")
+## library("grid")
+## library("lattice")
+## library("pheatmap")
+## library("viridisLite")
+
+## only package needed?
+library(rcompanion)
+
+
+### Add sample information
+if(!exists("sample.data")){
+    source("R/1_Data_preparation.R")
+}
+
 
 ##Load data
-if(Standards){
-  data.std<- read.csv("/SAN/Victors_playground/Eimeria_microbiome/qPCR/Eimeria_quantification_Std_Curve_data.csv")
-  data.std%>%
+data.std<- read.csv("data/Eimeria_quantification_Std_Curve_data.csv")
+data.std%>%
     dplyr::mutate(Genome_copies= Oocyst_count*8)-> data.std
   
   ##Define numeric and factor variables 
-  num.vars <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", "Genome_copies")
-  fac.vars <- c("Well", "Sample.Name", "Detector", "Task",  "Std_series","Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction")  
-  data.std[, num.vars] <- apply(data.std[, num.vars], 2, as.numeric)
-  data.std[, fac.vars] <- apply(data.std[, fac.vars], 2, as.factor)
-}
+num.vars <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", "Genome_copies")
+fac.vars <- c("Well", "Sample.Name", "Detector", "Task",  "Std_series","Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction")  
+data.std[, num.vars] <- apply(data.std[, num.vars], 2, as.numeric)
+data.std[, fac.vars] <- apply(data.std[, fac.vars], 2, as.factor)
 
-if(Unknowns){
-  data.unk<-read.csv("/SAN/Victors_playground/Eimeria_microbiome/qPCR/Eimeria_quantification_Sample_data.csv")
+data.unk<-read.csv("data/Eimeria_quantification_Sample_data.csv")
   
-  ##Define numeric and factor variables 
-  num.vars <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", 
+##Define numeric and factor variables 
+num.vars2 <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", 
                 "Oocyst_1", "Oocyst_2", "Oocyst_3", "Oocyst_4", "Oocyst_5", "Oocyst_6", "Oocyst_7", "Oocyst_8", "Dilution_factor", "Volume", "Sporulated")
-  fac.vars <- c("Well", "Sample.Name", "Detector", "Task", "Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction", "Strain")  
-  data.unk[, num.vars] <- apply(data.unk[, num.vars], 2, as.numeric)
-  data.unk[, fac.vars] <- apply(data.unk[, fac.vars], 2, as.factor)
-}
+  fac.vars2 <- c("Well", "Sample.Name", "Detector", "Task", "Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction", "Strain")  
+data.unk[, num.vars2] <- apply(data.unk[, num.vars2], 2, as.numeric)
+data.unk[, fac.vars2] <- apply(data.unk[, fac.vars2], 2, as.factor)
 
-if(Infexp){
-  data.inf<-read.csv("/SAN/Victors_playground/Eimeria_microbiome/qPCR/Eimeria_quantification_Inf_exp_data.csv")
-  data.inf%>%
+
+data.inf<-read.csv("data/Eimeria_quantification_Inf_exp_data.csv")
+data.inf%>%
     select(Content, Sample, Plate_number, Cq, Melt_Temperature)%>%
     dplyr::rename(Ct= Cq, labels= Sample, Task= Content, Tm= Melt_Temperature)-> data.inf
   
-  ##Define numeric and factor variables 
-  num.vars <- c("Ct", "Tm")
-  fac.vars <- c("labels", "Task", "Plate_number")  
-  data.inf[, num.vars] <- apply(data.inf[, num.vars], 2, as.numeric)
-  data.inf[, fac.vars] <- apply(data.inf[, fac.vars], 2, as.factor)
+##Define numeric and factor variables 
+num.vars3 <- c("Ct", "Tm")
+fac.vars3 <- c("labels", "Task", "Plate_number")  
+data.inf[, num.vars3] <- apply(data.inf[, num.vars3], 2, as.numeric)
+data.inf[, fac.vars3] <- apply(data.inf[, fac.vars3], 2, as.factor)
   
-  ### Add sample information
-  if(!exists("sample.data")){
-    source("~/GitProjects/Eimeria_Microbiome/R/1_Data_preparation.R")
-  }
-}
 
-rm(fac.vars, num.vars)
+rm(fac.vars, num.vars, fac.vars2, num.vars2, fac.vars3, num.vars3)
+
+
 ####### Standard curves #######
 set.seed(2020)
 # comput simple linear models from standards
 # "Genome copies modeled by Ct"
+
 data.std.lm<- subset(data.std, Task== "Standard") ## Select just data from standards 
 data.std.lm %>% 
   select(Sample.Name, Task, Ct, Cycler, Oocyst_count, Parasite, Genome_copies)-> data.std.lm ## Select useful data
@@ -96,7 +96,6 @@ lm.CtABI4 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasi
 lm.CtEpp <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="Eppendorf"))
 lm.CtBR <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="BioRad"))
 
-require("rcompanion")
 compareLM(lm.CtABI1, lm.CtEpp, lm.CtBR)
 compareLM(lm.CtABI1, lm.CtABI2, lm.CtABI3, lm.CtABI4)
 
