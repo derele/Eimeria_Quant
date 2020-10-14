@@ -1,32 +1,24 @@
 ## Code for 
 ## 1) Standard curve of qPCR Eimeria
+
+### We should have ONE model able to predict for different species and
+### cyclers, IF they are significantly different
+
 ## 2) Determine Eimeria amount for infection experiment samples
 
-## library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
-## library("ggplot2")
-## library("data.table")
-## library("tidyverse")
-## require("ggpubr")
-## library("dplyr")
-## library("plyr")
-## library("vegan")
-## library("gridExtra")
-## library("grid")
-## library("lattice")
-## library("pheatmap")
-## library("viridisLite")
+### then make the predictions based on the data (including cycler and
+### species) and the models (with those factors if significant)
 
-## only package needed?
+## only load packages that are needed!!!
+library(ggpubr)
 library(rcompanion)
+library(dplyr)
+library(gridExtra)
 
-
-### Add sample information
+##Load data
 if(!exists("sample.data")){
     source("R/1_Data_preparation.R")
 }
-
-
-##Load data
 data.std<- read.csv("data/Eimeria_quantification_Std_Curve_data.csv")
 data.std%>%
     dplyr::mutate(Genome_copies= Oocyst_count*8)-> data.std
@@ -34,7 +26,10 @@ data.std%>%
   ##Define numeric and factor variables 
 num.vars <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", "Genome_copies")
 fac.vars <- c("Well", "Sample.Name", "Detector", "Task",  "Std_series","Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction")  
-data.std[, num.vars] <- apply(data.std[, num.vars], 2, as.numeric)
+
+## as.numeric alone will likely fail if stringsAsfactors is TRUE! 
+data.std[, num.vars] <- apply(data.std[, num.vars], 2,
+                              function (x) as.numeric(as.character(x)))
 data.std[, fac.vars] <- apply(data.std[, fac.vars], 2, as.factor)
 
 data.unk<-read.csv("data/Eimeria_quantification_Sample_data.csv")
@@ -43,7 +38,8 @@ data.unk<-read.csv("data/Eimeria_quantification_Sample_data.csv")
 num.vars2 <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", 
                 "Oocyst_1", "Oocyst_2", "Oocyst_3", "Oocyst_4", "Oocyst_5", "Oocyst_6", "Oocyst_7", "Oocyst_8", "Dilution_factor", "Volume", "Sporulated")
   fac.vars2 <- c("Well", "Sample.Name", "Detector", "Task", "Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction", "Strain")  
-data.unk[, num.vars2] <- apply(data.unk[, num.vars2], 2, as.numeric)
+data.unk[, num.vars2] <- apply(data.unk[, num.vars2], 2,
+                               function (x) as.numeric(as.character(x)))
 data.unk[, fac.vars2] <- apply(data.unk[, fac.vars2], 2, as.factor)
 
 
@@ -55,7 +51,8 @@ data.inf%>%
 ##Define numeric and factor variables 
 num.vars3 <- c("Ct", "Tm")
 fac.vars3 <- c("labels", "Task", "Plate_number")  
-data.inf[, num.vars3] <- apply(data.inf[, num.vars3], 2, as.numeric)
+data.inf[, num.vars3] <- apply(data.inf[, num.vars3], 2,
+                               function (x) as.numeric(as.character(x)))
 data.inf[, fac.vars3] <- apply(data.inf[, fac.vars3], 2, as.factor)
   
 
@@ -75,7 +72,7 @@ data.std.lm %>%
 data.std.lm%>%
   ggplot(aes(x = Oocyst_count, y = Ct, color= Cycler)) +
   geom_smooth(method = "lm", se = T) +
-  guides(color = FALSE, size = FALSE) +  # Size legend also removed
+  guides(color = "none", size = "none") +  # Size legend also removed
   scale_x_log10("log 10 Eimeria Oocysts Count", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
@@ -88,6 +85,9 @@ data.std.lm%>%
   theme(text = element_text(size=20))+
   annotation_logticks(sides = "b")-> A1
 
+
+#### TODO: WHY seperate models? What is the question here? I guess a
+#### combined model would be better!!
 ###Model by cycler 
 lm.CtABI1 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"))
 lm.CtABI2 <- lm(Ct~log10(Oocyst_count)+Parasite, subset(data.std.lm, Cycler=="ABI"))
@@ -108,14 +108,11 @@ compareLM(lm.CtAll, lm.CtPar, lm.CtCyc, lm.CtInt)
 summary(lm.CtAll)
 summary(lm.CtInt)
 
-#require("ggeffects")
-#ggpredict(lm.CtEpp)
-
 ##Linear model Genome copies modeled by Oocyst count 
 data.std.lm%>%
   ggplot(aes(x = Oocyst_count, y = Genome_copies)) +
   geom_smooth(method = "lm", se = F, color= "black") +
-  guides(color = FALSE, size = FALSE) +  # Size legend also removed
+  guides(color = "none", size = "none") +  # Size legend also removed
   scale_x_log10("log 10 Eimeria Oocysts Count", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
@@ -136,7 +133,7 @@ lm.GC <- lm(log10(Genome_copies)~log10(Oocyst_count), data.std.lm)
 data.std.lm%>%
   ggplot(aes(x = Ct, y = Genome_copies)) +
   geom_smooth(method = "lm", se = T, color="black") +
-  guides(color = FALSE, size = FALSE) +  # Size legend also removed
+  guides(color = "none", size = "none") +  # Size legend also removed
   scale_y_log10("log 10 Eimeria genome copies/µL gDNA", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
@@ -148,6 +145,10 @@ data.std.lm%>%
   theme(text = element_text(size=20))+
   annotation_logticks(sides = "l")-> A3
 
+
+### USE ONE MODEL predict using different levels of the factor cycler
+### and parasite if they are significantly different. Use a dataframe
+### giving cycler and parsite for the prediction!
 lm.GC1 <- lm(log10(Genome_copies)~Ct, data.std.lm)
 summary(lm.GC1)
 lm.GCAll <- lm(log10(Genome_copies)~Ct+Parasite+Cycler, data.std.lm)
@@ -160,13 +161,9 @@ data.std.lm %>%
   select(Genome_copies, predicted, residuals) %>%
   head()
 
-#Linear model perfect fit Genome copies ~ Oocyst count
-lm.GC2<- lm(Genome_copies~ Oocyst_count, data = data.std.lm)
-summary(lm.GC2)
-
 ggplot(data.std.lm, aes(x = Oocyst_count, y = Ct, color= Parasite)) +
   geom_smooth(method = "lm", se = T) +
-  guides(color = FALSE, size = FALSE) +  # Size legend also removed
+  guides(color = "none", size = "none") +  # Size legend also removed
   #geom_point(aes(y = predicted), shape = 21) +
   scale_x_log10("log 10 Eimeria Oocysts Count", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
@@ -183,7 +180,7 @@ ggplot(data.std.lm, aes(x = Oocyst_count, y = Ct, color= Parasite)) +
 
 ggplot(data.std.lm, aes(x = Oocyst_count, y = Genome_copies)) +
   geom_smooth(method = "lm", se = FALSE, color= "darkgray") +
-  guides(color = FALSE, size = FALSE) +  # Size legend also removed
+  guides(color = "none", size = "none") +  # Size legend also removed
   #geom_point(aes(y = predicted), shape = 21) +
   scale_x_log10("log 10 Oocysts count", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
@@ -271,48 +268,59 @@ data.std%>%
 std_br<- lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Task=="Standard" & Parasite=="E_falciformis" & Cycler=="BioRad"))
 summary(std_br)
 
-### Figure 1 Final Standard curves 
-pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
-grid.arrange(A, B)
-dev.off()
 
-pdf(file = "fig/Figure_1.1.pdf", width = 10, height = 10)
-grid.arrange(A, B, C)
-dev.off()
-rm(A,B,C)
+## NO IDEA, objects A B C are simply never created!!!
 
-pdf(file = "fig/Figure_1.2.pdf", width = 10, height = 8)
-grid.arrange(A1)
-dev.off()
+## ### Figure 1 Final Standard curves 
+## pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
+## grid.arrange(A, B)
+## dev.off()
 
-pdf(file = "fig/Figure_1.3.pdf", width = 10, height = 8)
-grid.arrange(B1)
-dev.off()
+## pdf(file = "fig/Figure_1.1.pdf", width = 10, height = 10)
+## grid.arrange(A, B, C)
+## dev.off()
+## rm(A,B,C)
 
-pdf(file = "fig/Figure_1.4.pdf", width = 10, height = 8)
-grid.arrange(A2)
-dev.off()
+## pdf(file = "fig/Figure_1.2.pdf", width = 10, height = 8)
+## grid.arrange(A1)
+## dev.off()
 
-pdf(file = "fig/Figure_1.5.pdf", width = 10, height = 8)
-grid.arrange(A3)
-dev.off()
+## pdf(file = "fig/Figure_1.3.pdf", width = 10, height = 8)
+## grid.arrange(B1)
+## dev.off()
+
+## pdf(file = "fig/Figure_1.4.pdf", width = 10, height = 8)
+## grid.arrange(A2)
+## dev.off()
+
+## pdf(file = "fig/Figure_1.5.pdf", width = 10, height = 8)
+## grid.arrange(A3)
+## dev.off()
 
 ## First test on Eppendorf cycler
 data.std%>%
-  select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm)%>%
-  filter(Task=="Standard" & Cycler=="Eppendorf")%>%
-  dplyr::group_by(Parasite)%>%
-  ggplot(aes(Qty, Ct))+
-  scale_x_log10("log 10 Number of Eimeria Oocyst (Flotation)")+
-  geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 25, fill= Std_series), color= "black")+
-  geom_smooth(aes(color= Std_series, fill= Std_series), method = "lm")+            
-  stat_cor(aes(color = Std_series), label.x = 4,  label.y = c(30, 31),method = "spearman")+
-  stat_cor(label.x = 4, label.y = c(28, 30),aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Std_series))+        # Add correlation coefficient
-  stat_regline_equation(aes(color = Std_series), label.x = 3, label.y = c(30, 31))+
-  stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color="black")+
-  labs(tag = "A)")+
-  theme_bw() +
-  theme(text = element_text(size=20), legend.position = "none")
+    select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm)%>%
+    filter(Task=="Standard" & Cycler=="Eppendorf")%>%
+    dplyr::group_by(Parasite)%>%
+    ggplot(aes(Qty, Ct))+
+    scale_x_log10("log 10 Number of Eimeria Oocyst (Flotation)")+
+    geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 25, fill= Std_series),
+                color= "black")+
+    geom_smooth(aes(color= Std_series, fill= Std_series), method = "lm")+            
+    stat_cor(aes(color = Std_series), label.x = 4,  label.y = c(30, 31),
+             method = "spearman")+
+    stat_cor(label.x = 4, label.y = c(28, 30),
+             aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"),
+                 color = Std_series))+        ## Add correlation coefficient
+    stat_regline_equation(aes(color = Std_series), label.x = 3, label.y = c(30, 31))+
+    stat_summary(fun.data=mean_cl_boot, geom="pointrange",
+                 shape=16, size=0.5, color="black")+
+    labs(tag = "A)")+
+    theme_bw() +
+    theme(text = element_text(size=20), legend.position = "none") ->
+    orphanPlot ## was before plotting to the output device !!! Where
+               ## is this plot needed???
+    
 
 summary(lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="Eppendorf")))
 
@@ -337,7 +345,6 @@ data.std%>%
 summary(lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="BioRad" & Task== "Standard")))
 
 ###### Intersample variation experiment #####
-if(Unknowns){
     
 data.unk%>%
   dplyr::select(Sample.Name, Task, Ct,Qty,Cycler,Parasite, Sample_type, Extraction, Tm, Oocyst_1, Oocyst_2, Oocyst_3, Oocyst_4, Oocyst_5,Oocyst_6, Oocyst_7, Oocyst_8, Sporulated, Dilution_factor, Volume, Strain)%>%
@@ -383,11 +390,13 @@ data.unk%>%
   dplyr::mutate(Sporulation_rate= as.numeric(Sporulation_rate))-> data.unk.lm
 
 data.unk.lm$predicted.Gc<- 10^predict(lm.GC1, data.unk.lm)
-data.unk.lm$residuals.Gc<- 10^residuals(lm.GC1, data.unk.lm)
+
+## data.unk.lm$residuals.Gc<- 10^residuals(lm.GC1, data.unk.lm)
+## # Error in match.arg(type) : 'arg' must be NULL or a character vector
 
 ggplot(data.unk.lm, aes(x = Oocyst_count, y = predicted.Gc)) +
   geom_smooth(method = "lm", se = F,color= "darkgrey") +
-  guides(color = FALSE, size = FALSE) +  # Size legend also removed
+  guides(color = "none", size = "none") +  # Size legend also removed
   #geom_point(aes(y = predicted), shape = 21) +
   scale_x_log10("log 10 Eimeria Oocysts Count", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
@@ -411,35 +420,38 @@ pdf(file = "fig/Figure_2.1.pdf", width = 10, height = 8)
 grid.arrange(D1)
 dev.off()
 
-}
 ########## Mock samples Experiment #########
-if(Mock){
-  ##Mean comparison standars against NTC
-  set.seed(2020)
-  data.std%>%
+##Mean comparison standars against NTC
+set.seed(2020)
+data.std%>%
     select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm, Date)%>%
     filter(Task%in%c("Standard", "NTC") & Cycler=="ABI" & Date=="300620")%>%
     ggplot(aes(x = Sample.Name, y = Ct)) +
-    scale_x_discrete(name = "Standard", labels= c("Eimeria_10_0"= "Oocysts 10⁰", "Eimeria_10_1"= "Oocysts 10¹",
-                                                  "Eimeria_10_2"= "Oocysts 10²", "Eimeria_10_3"= "Oocysts 10³",
-                                                  "Eimeria_10_4"= "Oocysts 10⁴", "Eimeria_10_5"= "Oocysts 10⁵",
-                                                  "Eimeria_10_6"= "Oocysts 10⁶", "H2O"= "NTC")) +
+    scale_x_discrete(name = "Standard",
+                     labels= c("Eimeria_10_0"= "Oocysts 10⁰", "Eimeria_10_1"= "Oocysts 10¹",
+                               "Eimeria_10_2"= "Oocysts 10²", "Eimeria_10_3"= "Oocysts 10³",
+                               "Eimeria_10_4"= "Oocysts 10⁴", "Eimeria_10_5"= "Oocysts 10⁵",
+                               "Eimeria_10_6"= "Oocysts 10⁶", "H2O"= "NTC")) +
     scale_y_continuous(name = "Ct")+ 
-    geom_jitter(shape=21, position=position_jitter(0.2), color= "black", aes(size= 25, fill= Std_series))+
+    geom_jitter(shape=21, position=position_jitter(0.2), color= "black",
+                aes(size= 25, fill= Std_series))+
     theme_bw() +
     theme(text = element_text(size=16),legend.position = "none")+
     theme(axis.text.x = element_text(angle=90))+
-    stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color="black")+
+    stat_summary(fun.data=mean_cl_boot, geom="pointrange",
+                 shape=16, size=0.5, color="black")+
     labs(tag = "A)")+
     geom_hline(yintercept = 30, linetype = 2)+
     stat_compare_means(method = "anova",
-                       aes(label = paste0(..method.., ",\n","p=",..p.format..)), label.y= 33, label.x = 7)+
+                       aes(label = paste0(..method.., ",\n","p=",..p.format..)),
+                       label.y= 33, label.x = 7)+
     stat_compare_means(label = "p.signif", method = "t.test",ref.group = "H2O", 
-                       label.y = c(34, 31, 27, 24, 21, 17, 15, 0)) ##Determine that 10^0 meassurments are basically like NTC
-  
-  ##Compair mock samples qPCR estimation with real oocyst count by two extraction methods
-  set.seed(2020)
-  data.unk%>%
+                       label.y = c(34, 31, 27, 24, 21, 17, 15, 0))
+###Determine that 10^0 meassurments are basically like NTC
+
+##Compair mock samples qPCR estimation with real oocyst count by two extraction methods
+set.seed(2020)
+data.unk%>%
     select(Sample.Name, Task, Ct,Qty,Cycler,Parasite, Sample_type, Feces_weight, Extraction, Oocyst_count)%>%
     filter(Sample_type=="Feces" & Task=="Unknown")%>%
     dplyr::mutate(Qty= 10^((Ct-36)/-3.1))%>%
@@ -457,40 +469,47 @@ if(Mock){
     stat_cor(aes(color = Extraction), label.x = log10(100),  label.y = log10(100000),method = "spearman")+
     stat_cor(label.x = log10(100), label.y = log10(50000), aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Extraction))+        # Add correlation coefficient
     stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color="black")+
-    #stat_regline_equation(aes(color = Std_series), label.x = 3, label.y = c(35, 31))
+                                        #stat_regline_equation(aes(color = Std_series), label.x = 3, label.y = c(35, 31))
     theme(text = element_text(size=20),legend.position = "none")+
     labs(tag = "A)")+
     annotation_logticks(sides = "bl")
-  
-  ##Standard curve and ceramic beads data
-  data.std%>%
-    dplyr::select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm,Sample_type,Feces_weight,Extraction,Date)%>%
+
+##Standard curve and ceramic beads data
+data.std%>%
+    dplyr::select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,
+                  Parasite,Tm,Sample_type,Feces_weight,Extraction,Date)%>%
     filter(Task%in%c("Standard", "NTC") & Cycler=="ABI" & Std_series%in%c("A","B"))%>%
     dplyr::mutate(Qty= Qty*8)%>% ##Transform to Genome copies per uL gDNA qPCR 
     dplyr::group_by(Parasite)-> Std.mock
-  
-  data.unk%>%
-    dplyr::select(Sample.Name,Task,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm,Sample_type,Feces_weight,Extraction,Date, NanoDrop, Strain)%>%
+
+data.unk%>%
+    dplyr::select(Sample.Name,Task,Ct,Qty,Cycler,Oocyst_count,
+                  Parasite,Tm,Sample_type,Feces_weight,Extraction,Date, NanoDrop, Strain)%>%
     filter(Sample_type=="Feces" & Task=="Unknown" & Extraction!="Glass_beads")%>%
-    dplyr::mutate(Qty= 10^((Ct-36)/-3.1), ## Transform Ct to Genome copies per uL gDNA qPCR
-                  #GC_ngDNA= Genome_copies/NanoDrop, ## Estimate Genome copies by ng of fecal DNA
+     ## Transform Ct to Genome copies per uL gDNA qPCR
+    dplyr::mutate(Qty= 10^((Ct-36)/-3.1),
+                  ## GC_ngDNA= Genome_copies/NanoDrop, Estimate Genome
+                  ## copies by ng of fecal DNA
                   GC_ngDNA= Qty/50, ## Estimate Genome copies by ng of fecal DNA
                   DNA_sample= NanoDrop*40, ## Estimate total gDNA of sample
-                  DNA_g_feces= DNA_sample/Feces_weight, ## Transform it to ng fecal DNA by g of feces
+                  DNA_g_feces= DNA_sample/Feces_weight,
+                  ## Transform it to ng fecal DNA by g of feces
                   GC_gfeces= GC_ngDNA*DNA_g_feces, ## Estimate genome copies by g of feces
-                  OPG=Oocyst_count/Feces_weight)-> data.mock ## Estimate oocyst per g of feces for mock samples
-  
-  data.mock$predicted.Gc<- 10^predict(lm.GC1, data.mock)
-  data.mock$residuals.Gc<- 10^residuals(lm.GC1, data.mock) 
-  
-  data.mock%>%
-  bind_rows(data.std.lm)-> data.mock
-  
-  #rm(Std.mock)
-  
-  ##
-  set.seed(2020)
-  data.mock%>%
+                  OPG=Oocyst_count/Feces_weight) ->
+    data.mock ## Estimate oocyst per g of feces for mock samples
+
+data.mock$predicted.Gc<- 10^predict(lm.GC1, data.mock)
+## data.mock$residuals.Gc<- 10^residuals(lm.GC1, data.mock) 
+## ## Error in match.arg(type) : 'arg' must be NULL or a character vector
+
+data.mock%>%
+    bind_rows(data.std.lm)-> data.mock
+
+## rm(Std.mock)
+
+##
+set.seed(2020)
+data.mock%>%
     dplyr::select(Sample.Name,Task,Qty,Ct,Oocyst_count, predicted.Gc)%>%  
     filter(Task%in%c("Standard", "Unknown"))%>%
     ggplot(aes(x = Oocyst_count, y = predicted.Gc), geom=c("point", "smooth")) +
@@ -506,36 +525,52 @@ if(Mock){
     theme(legend.text=element_text(size=20)) +
     theme(legend.key.size = unit(3,"line")) +
     geom_smooth(aes(color= Task, fill= Task), method = "lm")+            
-    #stat_cor(aes(color = Task), label.x = 2,  label.y = c(7, 6),method = "spearman")+
+                                        #stat_cor(aes(color = Task), label.x = 2,  label.y = c(7, 6),method = "spearman")+
     stat_cor(label.x = 0.75, label.y =  5.5,aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Task))+        # Add correlation coefficient
     stat_regline_equation(aes(color = Task), label.x = 0.75, label.y = 6)+
     guides(colour = guide_legend(override.aes = list(size=10))) +
     theme(text = element_text(size=20),legend.position = "none")+
     labs(tag = "B)")+
     annotation_logticks(sides = "bl")->E#+
-    #theme(legend.position = c(0.85, 0.25), legend.direction = "vertical",
-          # Change legend key size and key width
-          #legend.key.size = unit(0.25, "cm"),
-          #legend.key.width = unit(0.15,"cm"))
-  
-  pdf(file = "fig/Figure_2.2.pdf", width = 10, height = 8)
-  grid.arrange(E)
-  dev.off()
-  
-  summary(lm(formula = log10(Qty)~log10(Oocyst_count), data = subset(data.mock, Task== "Standard")))
-  modelstd<- lm(formula = log10(Qty)~log10(Oocyst_count), data = subset(data.mock, Task== "Standard"))
-  summary(lm(formula = log10(Qty)~log10(Oocyst_count), data = subset(data.mock, Task== "Unknown" & Oocyst_count >0)))
-  modelmock<- lm(formula = log10(Qty)~log10(Oocyst_count), data = subset(data.mock, Task== "Unknown" & Oocyst_count >0))
-  
-  data.mock%>%
+                                        #theme(legend.position = c(0.85, 0.25), legend.direction = "vertical",
+                                        # Change legend key size and key width
+                                        #legend.key.size = unit(0.25, "cm"),
+                                        #legend.key.width = unit(0.15,"cm"))
+
+pdf(file = "fig/Figure_2.2.pdf", width = 10, height = 8)
+grid.arrange(E)
+dev.off()
+
+## summary(lm(formula = log10(Qty)~log10(Oocyst_count),
+##            data = subset(data.mock, Task== "Standard")))
+
+## # Error in lm.fit(x, y, offset = offset, singular.ok = singular.ok, ...) : 
+## #  0 (non-NA) cases
+
+## modelstd<- lm(formula = log10(Qty)~log10(Oocyst_count),
+##               data = subset(data.mock, Task== "Standard"))
+
+## Error in lm.fit(x, y, offset = offset, singular.ok = singular.ok, ...) : 
+##   0 (non-NA) cases
+ 
+summary(lm(formula = log10(Qty)~log10(Oocyst_count),
+           data = subset(data.mock, Task== "Unknown" & Oocyst_count >0)))
+
+## # Produces an error... but is also nowhere used after creating it??!!
+## modelmock<- lm(formula = log10(Qty)~log10(Oocyst_count),
+##                data = subset(data.mock, Task== "Unknown" & Oocyst_count >0))
+
+## ## Error in lm.fit(x, y, offset = offset, singular.ok = singular.ok, ...) : 
+
+data.mock%>%
     dplyr::select(Sample.Name, Qty, Oocyst_count, Task)%>%
     filter(Task== "Unknown"& Oocyst_count >0)%>%
     dplyr::mutate(Qty_estimated= 10^(0.9+log10(Oocyst_count)), Percent_error= ((Qty_estimated- Qty)/Qty_estimated)*100)->Error_mock
-  
-  mean_ci(Error_mock$Percent_error)
-  mean_sd(Error_mock$Percent_error)
-  
-  data.mock%>%
+
+mean_ci(Error_mock$Percent_error)
+mean_sd(Error_mock$Percent_error)
+
+data.mock%>%
     select(Sample.Name,Task,Qty,Ct,Oocyst_count, GC_gfeces, OPG)%>%  
     filter(Task== "Unknown")%>%
     ggplot(aes(x = OPG, y = Qty), geom=c("point", "smooth")) +
@@ -558,45 +593,54 @@ if(Mock){
     theme(text = element_text(size=20),legend.position = "none")+
     labs(tag = "C)")+
     annotation_logticks(sides = "bl")-> G
-  
-  pdf(file = "fig/Figure_2.pdf", width = 20, height = 15)
-  grid.arrange(D,E,G, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
-  dev.off()
-  rm(data.mock, data.unk, data.std, D, E, G)
-}
 
-###### Infection experiment samples ########
-if(Infexp){
+## pdf(file = "fig/Figure_2.pdf", width = 20, height = 15)
+## grid.arrange(D,E,G, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
+## dev.off()
+
+## # Error in grob$wrapvp <- vp : object of type 'closure' is not subsettable
+## ## In addition: There were 21 warnings (use warnings() to see them)
+
+### why are those created in the first place if they are removed here?
+### D was acutally never created!!!
+## rm(data.mock, data.unk, data.std, D, E, G)
+
+## Infection experiment --- well is this now what it is all about?
+
 ## Considering the standard curve generated with the data from the BioRad Cycler
-#Ct = 42x -4(log10Number of genome number per uL gDNA) Figure 1.1B
-# Number of genome copies = 10^((Ct-42)/-4)
+## Ct = 42x -4(log10Number of genome number per uL gDNA) Figure 1.1B
+## Number of genome copies = 10^((Ct-42)/-4)
 
-##Estimate number of genome copies with qPCR Ct value 
+## Estimate number of genome copies with qPCR Ct value 
 
-##Define real positive and negatives based on Tm 
+## Define real positive and negatives based on Tm 
 data.inf %>% 
-  dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
-                                      Tm >= 80   ~ "Negative", Tm < 80 ~ "Positive"))-> data.inf#%>%
-  #dplyr::mutate(Qty= 10^((Ct-42)/-4), Genome_copies= 10^((Ct-42)/-4)) -> data.inf
+    dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
+                                        Tm >= 80   ~ "Negative",
+                                        Tm < 80 ~ "Positive")) %>%
+    dplyr::mutate(Qty= 10^((Ct-42)/-4), Genome_copies= 10^((Ct-42)/-4)) -> data.inf
 
-  data.inf$Genome_copies<- 10^predict(lm.GC1, data.inf)
-  data.inf$residuals<- 10^residuals(lm.GC1, data.inf)
+data.inf$Genome_copies<- 10^predict(lm.GC1, data.inf)
+## data.inf$residuals<- 10^residuals(lm.GC1, data.inf) ## breaks
 
-  data.inf %>%
-  select(Tm, Genome_copies,labels) %>% # select variables to summarise
-  na.omit()%>%
-  dplyr::group_by(labels)%>%
-  dplyr::summarise_each(funs(min = min, q25 = quantile(., 0.25), median = median, q75 = quantile(., 0.75), 
-                      max = max, mean = mean, sd = sd)) -> Sum.inf
+data.inf %>%
+    select(Tm, Genome_copies,labels) %>% # select variables to summarise
+    na.omit()%>%
+    dplyr::group_by(labels)%>%
+    dplyr::summarise_each(funs(min = min, q25 = quantile(., 0.25),
+                               median = median, q75 = quantile(., 0.75), 
+                               max = max, mean = mean, sd = sd)) -> Sum.inf
 
-data.inf<- join(data.inf, Sum.inf, by= "labels")
+data.inf<- inner_join(data.inf, Sum.inf, by= "labels")
 
 data.inf%>%
-  select(labels, Genome_copies_mean, Tm_mean, Infection)%>%
-  filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
-  dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))-> data.inf.exp
+    select(labels, Genome_copies_mean, Tm_mean, Infection)%>%
+    filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
+    dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))-> data.inf.exp
 
-#write.csv(data.inf.exp, "/SAN/Victors_playground/Eimeria_microbiome/qPCR/sample_data_qPCR.csv", row.names = FALSE)
-}
-
+### why on earth creat something to delete it then? What is really needed here?
 rm(data.inf, data.std, Sum.inf)
+
+
+### There were 11 warnings (use warnings() to see them)
+### I didn't take care of these for now!! TODO!!!
