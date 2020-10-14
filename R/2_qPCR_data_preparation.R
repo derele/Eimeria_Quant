@@ -519,14 +519,17 @@ data.mock%>%
     scale_y_log10(name = "log10 Eimeria genome copies/µL gDNA \n (qPCR)", 
                   breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+ 
-    geom_jitter(shape=21, position=position_jitter(0.2), aes(fill= Task), size= 5, color= "black", alpha= 0.5)+
+    geom_jitter(shape=21, position=position_jitter(0.2),
+                aes(fill= Task), size= 5, color= "black", alpha= 0.5)+
     stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color="black")+
     theme_bw() +
     theme(legend.text=element_text(size=20)) +
     theme(legend.key.size = unit(3,"line")) +
     geom_smooth(aes(color= Task, fill= Task), method = "lm")+            
-                                        #stat_cor(aes(color = Task), label.x = 2,  label.y = c(7, 6),method = "spearman")+
-    stat_cor(label.x = 0.75, label.y =  5.5,aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Task))+        # Add correlation coefficient
+    ## stat_cor(aes(color = Task), label.x = 2,  label.y = c(7, 6),method = "spearman")+
+    stat_cor(label.x = 0.75, label.y =  5.5,
+             aes(label = paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Task))+
+    ## Add correlation coefficient
     stat_regline_equation(aes(color = Task), label.x = 0.75, label.y = 6)+
     guides(colour = guide_legend(override.aes = list(size=10))) +
     theme(text = element_text(size=20),legend.position = "none")+
