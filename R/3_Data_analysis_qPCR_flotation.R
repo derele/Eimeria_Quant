@@ -1,25 +1,6 @@
 ### Code to analyse
 ## 1) Correlation among qPCR and oocyst flotation quantification
 
-## library("lifecycle", lib.loc="/usr/local/lib/R/site-library") 
-## library("ggplot2")
-## library("data.table")
-## library("tidyverse")
-## require("ggpubr")
-## library("dplyr")
-## library("plyr")
-## library("vegan")
-## library("gridExtra")
-## library("grid")
-## library("lattice")
-## library("pheatmap")
-## library("viridisLite")
-## library("phyloseq")
-## library("microbiome")
-## library("grid")
-## library("knitr")
-## library("kableExtra")
-
 
 ## not clear (below) whether this should be used!
 ### library(ggsci)
@@ -68,12 +49,37 @@ sdt%>%
   labs(tag= "C)")+
   theme_bw()+
   theme(text = element_text(size=16))+
-  stat_cor(label.x = 5.5, label.y = 1.5, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
+    stat_cor(label.x = 5.5, label.y = 1.5,
+             aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
   stat_regline_equation(label.x = 5.5, label.y = 2)+
   stat_cor(label.x = 5.5,  label.y = 1,method = "spearman")+
   annotation_logticks()-> opgqpcr
 
-summary(lm(OPG~Genome_copies_mean,  data = sdt, na.action = na.exclude)) ## Using just genome copies as predictor
+OPGbyDNA <- lm(log10(OPG+.01)~log10(Genome_copies_mean+.01),
+               data = sdt, na.action = na.exclude)
+
+OPGbyDNA_dpi <- lm(log10(OPG+0.1)~log10(Genome_copies_mean+0.1)*dpi,
+                   data = sdt, na.action = na.exclude)
+
+summary(OPGbyDNA)
+
+summary(OPGbyDNA_dpi)
+
+anova(OPGbyDNA, OPGbyDNA_dpi)
+
+sdt%>%
+    ggplot(aes(Genome_copies_mean+0.1, OPG+0.1, fill=dpi))+
+    geom_smooth(method = lm, se=FALSE, aes(Genome_copies_mean+0.1, OPG+0.1, color=dpi))+
+    scale_y_continuous(name = "log10 Oocyst per gram feces (Flotation)", 
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+    scale_x_continuous(name = "log10 Genome copies/µL gDNA (qPCR)", 
+                  breaks = scales::trans_breaks("log10", function(x) 10^x),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+    geom_point(shape=21, size=5) +
+    theme_bw()+
+  annotation_logticks()-> opgqpcrDPI
+
 
 ###Course of infection 
 ## Oocysts
@@ -478,6 +484,8 @@ ts.data%>%
   stat_regline_equation(label.x = 5.5, label.y = 2)+
   stat_cor(label.x = 5.5,  label.y = 1,method = "spearman")+
   annotation_logticks()-> opgmaxsum
+
+
 
 ### OKAY, I HAVE TO STOP HERE, the below would take to much time to fix!
 
