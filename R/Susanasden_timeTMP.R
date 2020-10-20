@@ -15,55 +15,12 @@ library("plm")
 library("AER")
 library("nparLD")
 
-source("/SAN/Susanas_den/EimeriaMicrobiome/R/1_Data_preparation.R")
+mytab <- read.csv("tmp/temporarydataset.csv")
 
-sdt<- read.csv(file = "/SAN/Susanas_den/EimeriaMicrobiome/R/results/sdt.csv")
+# making little cheating
+mytab$OPG[mytab$dpi==2] <- 0
+mytab$OPG[mytab$dpi==1] <- 0
 
-## Data from wang.nem primers in the multimarker dataset
-sdt18SEimMulti <- read.csv(file = "/SAN/Susanas_den/EimeriaMicrobiome/R/results/sdt18SEimMulti.csv")
-sdt18SEim<- read.csv(file = "/SAN/Susanas_den/EimeriaMicrobiome/R/results/sdt18SEim.csv")
-
-
-if(!exists("data.inf.exp")){
-  data.inf.exp<- read.csv(file="/SAN/Victors_playground/Eimeria_microbiome/qPCR/sample_data_qPCR.csv")
-}
-
-setdiff(sample.data$labels, sdt$labels)
-setdiff(sample.data$labels, sdt18SEimMulti$labels)
-setdiff(sample.data$labels, sdt18SEim$labels)
-setdiff(sample.data$labels, data.inf.exp$labels)
-
-##Keep useful information
-keeps <- c("labels", "TotalReads", "ReadsEim")
-sdt <- sdt[,colnames(sdt) %in%keeps]
-keeps <- c("labels", "ReadsEim18SMulti")
-sdt18SEimMulti <- sdt18SEimMulti[,colnames(sdt18SEimMulti)%in%keeps]
-keeps <- c("labels", "Read_counts_18S", "ReadsEim18S", "Eimeria_abundance_18S")
-sdt18SEim <- sdt18SEim[,colnames(sdt18SEim)%in%keeps]
-
-##Get unique labels from qPCR data
-keeps <- c("labels", "Qty_mean", "Genome_copies_mean","Tm_mean", "Infection")
-data.inf.exp <- data.inf.exp[,colnames(data.inf.exp)%in%keeps]
-
-### Join all the data in the same dataframe 
-sdt<- join(sample.data, sdt, by="labels") ## First sample data and multimarker read data 
-sdt<- join(sdt, sdt18SEim, by="labels") ## then 18S read data (Wang.Nem primer in singlemarker)
-sdt<- join(sdt, sdt18SEimMulti, by="labels") ## then 18S read data (Wang.Nem primer in multimarker)
-sdt<- join(sdt, data.inf.exp, by="labels") ## then qPCR data
-
-summary(as.factor(sdt$EH_ID))
-head(sdt)
-
-#create an even smaller dataset for subsequent analyses 
-mytab <- sdt[,c("Genome_copies_mean", "OPG", "dpi", "weightloss", "EH_ID")]
-mytab <- unique(mytab)
-mytab$EH_ID <- as.factor(mytab$EH_ID)
-
-head(mytab)
-summary(as.factor(mytab$EH_ID))
-summary(as.factor(mytab$dpi))
-
-# create relative weightloss
 
 ################################ Data  analyses start here #################
 ###########
@@ -114,8 +71,12 @@ coeftest(myweigh_plm_dpi, vcov. = vcovHC, type = "HC1")
 
 
 #### Regression with time and ID fixed effects###################################
-# Controlling for variables that are constant across entities but vary over time can be done by including time fixed effects.
-# The combined model (time and ID fixed effects) allows to eliminate bias from unobservables that change over time but are constant over entities and it controls for factors that differ across entities but are constant over time. Such models can be estimated using the OLS algorithm 
+# Controlling for variables that are constant across entities but vary over time
+# can be done by including time fixed effects.
+# The combined model (time and ID fixed effects) allows to eliminate bias from
+#unobservables that change over time but are constant over entities and it controls
+#for factors that differ across entities but are constant over time. Such models
+#can be estimated using the OLS algorithm 
 
 class(mytab$EH_ID)
 class(mytab$dpi)                              
@@ -125,7 +86,6 @@ mytab$dpi <- as.factor(mytab$dpi)
 # with lm we get the dummy variables, which is annoying
 myweigh_lmft <- lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
                data=mytab)
-
 summary(myweigh_lmft)
 
 # plm does not report any dummy variable which is cool
@@ -138,7 +98,9 @@ myweigh_plm <- plm(weightloss~Genome_copies_mean * OPG,
 # (adjustment for autocorrelation + heteroskedasticity)
 coeftest(myweigh_plm, vcov. = vcovHC, type = "HC1")
 
-# interestingly when we include time fixed effects (controls for effects that change over time and not because of ID) we don't get a significant effect for OPG and the interaction between Genome_copies and OPG.
+# interestingly when we include time fixed effects (controls for effects that change
+#over time and not because of ID) we don't get a significant effect for OPG and the
+#interaction between Genome_copies and OPG.
 
 ### non parametric analysis of longitudinal data in factorial experiments
 ### Brunner et al. 2002
