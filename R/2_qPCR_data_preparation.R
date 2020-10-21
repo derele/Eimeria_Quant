@@ -625,17 +625,19 @@ data.inf$Genome_copies<- 10^predict(lm.GC1, data.inf)
 ## data.inf$residuals<- 10^residuals(lm.GC1, data.inf) ## breaks
 
 data.inf %>%
-    select(Tm, Genome_copies,labels) %>% # select variables to summarise
+    select(Genome_copies,labels) %>% # select variables to summarise
     na.omit()%>%
     dplyr::group_by(labels)%>%
-    dplyr::summarise_each(funs(min = min, q25 = quantile(., 0.25),
-                               median = median, q75 = quantile(., 0.75), 
-                               max = max, mean = mean, sd = sd)) -> Sum.inf
+    dplyr::summarise_each(funs(Genome_copies_min = min, Genome_copies_q25 = quantile(., 0.25),
+                               Genome_copies_median = median, Genome_copies_q75 = quantile(., 0.75), 
+                               Genome_copies_max = max, Genome_copies_mean = mean, Genome_copies_sd = sd)) -> Sum.inf
+
+## Tm values were not sumarised to avoid problems in the function 
 
 data.inf<- inner_join(data.inf, Sum.inf, by= "labels")
 
 data.inf%>%
-    select(labels, Genome_copies_mean, Tm_mean, Infection)%>%
+    select(labels, Genome_copies_mean, Infection)%>%
     filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
     dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))-> data.inf.exp
 
