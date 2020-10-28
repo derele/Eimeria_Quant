@@ -84,7 +84,33 @@ series = series[order(series$dpi),]
 # Check if the ACF plot has no bands crossing the threshold boundary except 0th lag
 # (which is the correlation of the observation with itself).
 
+install.packages("tseries")
+library(tseries)
+# adf.test computes the Augmented Dickey-Fuller test for the null that x has a unit root.
+# Unit root tests are tests for stationarity in a time series. A time series has 
+# stationarity if a shift in time doesn't cause a change in the shape of the distribution;
+# unit roots are one cause for non-stationarity. These tests are known for having low 
+# statistical power
+inds = unique(sdt$EH_ID)
+for (i in inds){
+  series = sdt[sdt$EH_ID %in% i,]
+  series = series[order(series$dpi),"OPG"]
+  # replace NA per 0 
+  series[is.na(series)] = 0
+  # perform test
+  print(c(i, round(adf.test(series)$p.value, 4)))
+}
+## rejection of stationary TS in 3/22 individuals
 
+for (i in inds){
+  series = sdt[sdt$EH_ID %in% i,]
+  series = series[order(series$dpi),"Genome_copies_mean"]
+  # replace NA per 0 
+  series[is.na(series)] = 0
+  # perform test
+  print(c(i, round(adf.test(series)$p.value, 4)))
+}
+## rejection of stationary TS in 7/22
 
 
 
