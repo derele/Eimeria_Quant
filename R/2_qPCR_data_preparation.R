@@ -87,26 +87,26 @@ data.std.lm%>%
 
 
 #### TODO: WHY seperate models? What is the question here? I guess a
-#### combined model would be better!!
+#### combined model would be better!! Still under test ;)
 ###Model by cycler 
-lm.CtABI1 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"))
-lm.CtABI2 <- lm(Ct~log10(Oocyst_count)+Parasite, subset(data.std.lm, Cycler=="ABI"))
-lm.CtABI3 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasite=="E_falciformis"))
-lm.CtABI4 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasite=="E_ferrisi"))
-lm.CtEpp <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="Eppendorf"))
-lm.CtBR <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="BioRad"))
+#lm.CtABI1 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"))
+#lm.CtABI2 <- lm(Ct~log10(Oocyst_count)+Parasite, subset(data.std.lm, Cycler=="ABI"))
+#lm.CtABI3 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasite=="E_falciformis"))
+#lm.CtABI4 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasite=="E_ferrisi"))
+#lm.CtEpp <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="Eppendorf"))
+#lm.CtBR <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="BioRad"))
 
-compareLM(lm.CtABI1, lm.CtEpp, lm.CtBR)
-compareLM(lm.CtABI1, lm.CtABI2, lm.CtABI3, lm.CtABI4)
+#compareLM(lm.CtABI1, lm.CtEpp, lm.CtBR)
+#compareLM(lm.CtABI1, lm.CtABI2, lm.CtABI3, lm.CtABI4)
 
-lm.CtAll<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
-lm.CtPar<- lm(Ct~log10(Oocyst_count)+Parasite, data.std.lm)
-lm.CtCyc<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
-lm.CtInt<- lm(Ct~log10(Oocyst_count)+Parasite*Cycler, data.std.lm)
+#lm.CtAll<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
+#lm.CtPar<- lm(Ct~log10(Oocyst_count)+Parasite, data.std.lm)
+#lm.CtCyc<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
+#lm.CtInt<- lm(Ct~log10(Oocyst_count)+Parasite*Cycler, data.std.lm)
 
-compareLM(lm.CtAll, lm.CtPar, lm.CtCyc, lm.CtInt)
-summary(lm.CtAll)
-summary(lm.CtInt)
+#compareLM(lm.CtAll, lm.CtPar, lm.CtCyc, lm.CtInt)
+#summary(lm.CtAll)
+#summary(lm.CtInt)
 
 ##Linear model Genome copies modeled by Oocyst count 
 data.std.lm%>%
@@ -127,7 +127,7 @@ data.std.lm%>%
   theme(text = element_text(size=20))+
   annotation_logticks(sides = "bl")-> A2
 
-lm.GC <- lm(log10(Genome_copies)~log10(Oocyst_count), data.std.lm)
+#lm.GC <- lm(log10(Genome_copies)~log10(Oocyst_count), data.std.lm)
 
 ##Linear model (Standard curve for the rest of experiments)
 data.std.lm%>%
@@ -148,7 +148,7 @@ data.std.lm%>%
 
 ### USE ONE MODEL predict using different levels of the factor cycler
 ### and parasite if they are significantly different. Use a dataframe
-### giving cycler and parsite for the prediction!
+### giving cycler and parsite for the prediction!... Still testing, but usable for now
 lm.GC1 <- lm(log10(Genome_copies)~Ct, data.std.lm)
 summary(lm.GC1)
 lm.GCAll <- lm(log10(Genome_copies)~Ct+Parasite+Cycler, data.std.lm)
@@ -218,12 +218,12 @@ data.std%>%
   #facet_grid(cols = vars(Std_series))+
   theme(text = element_text(size=20), legend.position = "none")+
   annotation_logticks(sides = "b")+
-  coord_cartesian(ylim = c(10, 40)) -> A
+  coord_cartesian(ylim = c(10, 40))
 
-std_abi<- lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="ABI" & Task== "Standard" & Std_series%in%c("A","B")))
-summary(std_abi)
+#std_abi<- lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="ABI" & Task== "Standard" & Std_series%in%c("A","B")))
+#summary(std_abi)
 
-##Final standard curve for Inf. experiment samples 
+##Standard curve for Inf. experiment samples (not used any more... erase later)
 data.std%>%
   dplyr::select(Sample.Name,Task,Std_series,Ct,Cycler,Oocyst_count,Parasite,Tm)%>%
   filter(Task=="Standard" & Parasite=="E_falciformis" & Cycler=="BioRad")%>%
@@ -242,7 +242,7 @@ data.std%>%
   theme_bw() +
   theme(text = element_text(size=20), legend.position = "none")+
   annotation_logticks(sides = "b")+
-  coord_cartesian(ylim = c(10, 40))-> B
+  coord_cartesian(ylim = c(10, 40))
 
 ##Oocysts
 data.std%>%
@@ -263,13 +263,12 @@ data.std%>%
   theme_bw() +
   theme(text = element_text(size=20), legend.position = "none")+
   annotation_logticks(sides = "b")+
-  coord_cartesian(ylim = c(10, 40))-> B
+  coord_cartesian(ylim = c(10, 40))
 
-std_br<- lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Task=="Standard" & Parasite=="E_falciformis" & Cycler=="BioRad"))
-summary(std_br)
+#std_br<- lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Task=="Standard" & Parasite=="E_falciformis" & Cycler=="BioRad"))
+#summary(std_br)
 
-
-## NO IDEA, objects A B C are simply never created!!!
+## Need to be adjusted ;) 
 
 ## ### Figure 1 Final Standard curves 
 ## pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
@@ -297,32 +296,31 @@ summary(std_br)
 ## grid.arrange(A3)
 ## dev.off()
 
-## First test on Eppendorf cycler
-data.std%>%
-    select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm)%>%
-    filter(Task=="Standard" & Cycler=="Eppendorf")%>%
-    dplyr::group_by(Parasite)%>%
-    ggplot(aes(Qty, Ct))+
-    scale_x_log10("log 10 Number of Eimeria Oocyst (Flotation)")+
-    geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 25, fill= Std_series),
-                color= "black")+
-    geom_smooth(aes(color= Std_series, fill= Std_series), method = "lm")+            
-    stat_cor(aes(color = Std_series), label.x = 4,  label.y = c(30, 31),
-             method = "spearman")+
-    stat_cor(label.x = 4, label.y = c(28, 30),
-             aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"),
-                 color = Std_series))+        ## Add correlation coefficient
-    stat_regline_equation(aes(color = Std_series), label.x = 3, label.y = c(30, 31))+
-    stat_summary(fun.data=mean_cl_boot, geom="pointrange",
-                 shape=16, size=0.5, color="black")+
-    labs(tag = "A)")+
-    theme_bw() +
-    theme(text = element_text(size=20), legend.position = "none") ->
-    orphanPlot ## was before plotting to the output device !!! Where
+## First test on Eppendorf cycler (Not used anymore)
+#data.std%>%
+#    select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm)%>%
+#    filter(Task=="Standard" & Cycler=="Eppendorf")%>%
+#    dplyr::group_by(Parasite)%>%
+#    ggplot(aes(Qty, Ct))+
+#    scale_x_log10("log 10 Number of Eimeria Oocyst (Flotation)")+
+#    geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 25, fill= Std_series),
+#                color= "black")+
+#    geom_smooth(aes(color= Std_series, fill= Std_series), method = "lm")+            
+#    stat_cor(aes(color = Std_series), label.x = 4,  label.y = c(30, 31),
+#             method = "spearman")+
+#    stat_cor(label.x = 4, label.y = c(28, 30),
+#             aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"),
+#                 color = Std_series))+        ## Add correlation coefficient
+#    stat_regline_equation(aes(color = Std_series), label.x = 3, label.y = c(30, 31))+
+#    stat_summary(fun.data=mean_cl_boot, geom="pointrange",
+#                 shape=16, size=0.5, color="black")+
+#    labs(tag = "A)")+
+#    theme_bw() +
+#    theme(text = element_text(size=20), legend.position = "none") ->
+#    orphanPlot ## was before plotting to the output device !!! Where
                ## is this plot needed???
     
-
-summary(lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="Eppendorf")))
+#summary(lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="Eppendorf")))
 
 ### Comparison between series in BioRad cycler
 data.std%>%
@@ -342,10 +340,10 @@ data.std%>%
   facet_grid(cols = vars(Std_series))+
   theme(text = element_text(size=20), legend.position = "none")
 
-summary(lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="BioRad" & Task== "Standard")))
+#summary(lm(formula = log10(Oocyst_count)~Ct, data = subset(data.std, Cycler=="BioRad" & Task== "Standard")))
 
 ###### Intersample variation experiment #####
-    
+##Old preliminary figure    
 data.unk%>%
   dplyr::select(Sample.Name, Task, Ct,Qty,Cycler,Parasite, Sample_type, Extraction, Tm, Oocyst_1, Oocyst_2, Oocyst_3, Oocyst_4, Oocyst_5,Oocyst_6, Oocyst_7, Oocyst_8, Sporulated, Dilution_factor, Volume, Strain)%>%
   dplyr::mutate(Qty= 10^((Ct-36)/-3.1))%>% ## Considering ABI std curve (Fig.1A)
@@ -620,8 +618,8 @@ data.mock%>%
 data.inf %>% 
     dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
                                         Tm >= 80   ~ "Negative",
-                                        Tm < 80 ~ "Positive")) %>%
-    dplyr::mutate(Qty= 10^((Ct-42)/-4), Genome_copies= 10^((Ct-42)/-4)) -> data.inf
+                                        Tm < 80 ~ "Positive")) -> data.inf #%>%
+    #dplyr::mutate(Qty= 10^((Ct-42)/-4), Genome_copies= 10^((Ct-42)/-4)) -> data.inf
 
 data.inf$Genome_copies<- 10^predict(lm.GC1, data.inf)
 ## data.inf$residuals<- 10^residuals(lm.GC1, data.inf) ## breaks
