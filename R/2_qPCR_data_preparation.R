@@ -101,10 +101,10 @@ data.std.lm%>%
 
 #lm.CtAll<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
 #lm.CtPar<- lm(Ct~log10(Oocyst_count)+Parasite, data.std.lm)
-#lm.CtCyc<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
+#lm.Ct<- lm(Ct~log10(Oocyst_count), data.std.lm)
 #lm.CtInt<- lm(Ct~log10(Oocyst_count)+Parasite*Cycler, data.std.lm)
 
-#compareLM(lm.CtAll, lm.CtPar, lm.CtCyc, lm.CtInt)
+#compareLM(lm.CtAll, lm.CtPar, lm.Ct, lm.CtInt)
 #summary(lm.CtAll)
 #summary(lm.CtInt)
 
