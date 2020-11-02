@@ -19,6 +19,7 @@ library(gridExtra)
 if(!exists("sample.data")){
     source("R/1_Data_preparation.R")
 }
+##Standard curves
 data.std<- read.csv("data/Eimeria_quantification_Std_Curve_data.csv")
 data.std%>%
     dplyr::mutate(Genome_copies= Oocyst_count*8)-> data.std
@@ -32,17 +33,19 @@ data.std[, num.vars] <- apply(data.std[, num.vars], 2,
                               function (x) as.numeric(as.character(x)))
 data.std[, fac.vars] <- apply(data.std[, fac.vars], 2, as.factor)
 
+##Inter-sample variation
 data.unk<-read.csv("data/Eimeria_quantification_Sample_data.csv")
   
 ##Define numeric and factor variables 
 num.vars2 <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_count", "Feces_weight", "Qubit", "NanoDrop", "Beads_weight", "Tm", 
                 "Oocyst_1", "Oocyst_2", "Oocyst_3", "Oocyst_4", "Oocyst_5", "Oocyst_6", "Oocyst_7", "Oocyst_8", "Dilution_factor", "Volume", "Sporulated")
   fac.vars2 <- c("Well", "Sample.Name", "Detector", "Task", "Date", "Operator", "Cycler", "Parasite", "Sample_type", "Extraction", "Strain")  
-data.unk[, num.vars2] <- apply(data.unk[, num.vars2], 2,
+
+  data.unk[, num.vars2] <- apply(data.unk[, num.vars2], 2,
                                function (x) as.numeric(as.character(x)))
 data.unk[, fac.vars2] <- apply(data.unk[, fac.vars2], 2, as.factor)
 
-
+##Infection experiment
 data.inf<-read.csv("data/Eimeria_quantification_Inf_exp_data.csv")
 data.inf%>%
     select(Content, Sample, Plate_number, Cq, Melt_Temperature)%>%
@@ -76,37 +79,34 @@ data.std.lm%>%
   scale_x_log10("log 10 Eimeria Oocysts Count", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  stat_cor(label.x = 5, label.y = c(35,30,25),aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~")))+# Add correlation coefficient
-  stat_regline_equation(label.x = 5, label.y = c(36.5,31.5,26.5))+
-  #stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color= "black")+
+  geom_jitter(shape=21, position=position_jitter(0.2), 
+              aes(size= 20,fill= Cycler), color= "black", alpha= 0.5)+
+  #stat_cor(label.x = 5, label.y = c(35,30,25), 
+  #         aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~")))+ # Add correlation coefficient
+  #stat_regline_equation(label.x = 5, label.y = c(36.5,31.5,26.5))+ # Add Regression equation lm Ct~log10(Oocyst_count)
   labs(tag = "A)")+
   theme_bw() +
   theme(text = element_text(size=20))+
-  annotation_logticks(sides = "b")-> A1
+  annotation_logticks(sides = "b")-> A
 
+##Ct modeled by Oocyst_counts and extra predictors to be considered 
+##Model 1: Ct modeled by oocyst count simple without other predictor
+##considering all data 
+lm.Ct<- lm(Ct~log10(Oocyst_count), data.std.lm)
 
-#### TODO: WHY seperate models? What is the question here? I guess a
-#### combined model would be better!! Still under test ;)
-###Model by cycler 
-#lm.CtABI1 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"))
-#lm.CtABI2 <- lm(Ct~log10(Oocyst_count)+Parasite, subset(data.std.lm, Cycler=="ABI"))
-#lm.CtABI3 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasite=="E_falciformis"))
-#lm.CtABI4 <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="ABI"&Parasite=="E_ferrisi"))
-#lm.CtEpp <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="Eppendorf"))
-#lm.CtBR <- lm(Ct~log10(Oocyst_count), subset(data.std.lm, Cycler=="BioRad"))
+##Model 2: Ct modeled by oocyst count and parasite as predictors
+lm.CtPar<- lm(Ct~log10(Oocyst_count)+Parasite, data.std.lm)
 
-#compareLM(lm.CtABI1, lm.CtEpp, lm.CtBR)
-#compareLM(lm.CtABI1, lm.CtABI2, lm.CtABI3, lm.CtABI4)
+##Model 3: Ct modeled by oocysts counts, parasite and cycler used as predictors
+lm.CtAll<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
 
-#lm.CtAll<- lm(Ct~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
-#lm.CtPar<- lm(Ct~log10(Oocyst_count)+Parasite, data.std.lm)
-#lm.Ct<- lm(Ct~log10(Oocyst_count), data.std.lm)
-#lm.CtInt<- lm(Ct~log10(Oocyst_count)+Parasite*Cycler, data.std.lm)
+##Model 4: Ct modeled by oocysts counts and parasite/cycle interaction (Check with Alice and Susi)
+lm.CtInt<- lm(Ct~log10(Oocyst_count)+Parasite*Cycler, data.std.lm)
 
-#compareLM(lm.CtAll, lm.CtPar, lm.Ct, lm.CtInt)
-#summary(lm.CtAll)
-#summary(lm.CtInt)
+##Comparison of models 
+compareLM(lm.CtAll, lm.CtPar, lm.Ct, lm.CtInt)
+
+##Model 3 and 4 fit better the data... Confirm this result!
 
 ##Linear model Genome copies modeled by Oocyst count 
 data.std.lm%>%
