@@ -33,6 +33,11 @@ data.std[, num.vars] <- apply(data.std[, num.vars], 2,
                                  function (x) as.numeric(as.character(x)))
 data.std[, fac.vars] <- apply(data.std[, fac.vars], 2, as.factor)
 
+##Correct zero in NTC with not-detected results 
+data.std$Ct[data.std$Ct == 0] <- NA
+data.std$Ct_mean[data.std$Ct_mean == 0 & data.std$Task == "NTC"] <- NA
+data.std$Sd_Ct[data.std$Sd_Ct == 0] <- NA
+
 ## Select just standards data
 ## Estimate the number of genome copies per ng of gDNA
 data.std.lm<- subset(data.std, Task== "Standard") ## Select just data from standards 
