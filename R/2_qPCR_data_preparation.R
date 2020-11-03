@@ -38,6 +38,9 @@ data.std$Ct[data.std$Ct == 0] <- NA
 data.std$Ct_mean[data.std$Ct_mean == 0 & data.std$Task == "NTC"] <- NA
 data.std$Sd_Ct[data.std$Sd_Ct == 0] <- NA
 
+##Correct labels to have them homogeneous 
+data.std$Sample.Name<- gsub(pattern = " ", replacement = "_", x = data.std$Sample.Name)
+
 ## Select just standards data
 ## Estimate the number of genome copies per ng of gDNA
 data.std.lm<- subset(data.std, Task== "Standard") ## Select just data from standards 
@@ -284,7 +287,7 @@ data.std%>%
                                "Eimeria_10_6"= "Oocysts 10⁶", "H2O"= "NTC")) +
     scale_y_continuous(name = "Ct")+ 
     geom_jitter(shape=21, position=position_jitter(0.2), color= "black",
-                aes(size= 25, fill= Std_series))+
+                aes(size= 25, fill= Cycler))+
     theme_bw() +
     theme(text = element_text(size=16),legend.position = "none")+
     theme(axis.text.x = element_text(angle=90))+
@@ -296,8 +299,8 @@ data.std%>%
                        aes(label = paste0(..method.., ",\n","p=",..p.format..)),
                        label.y= 33, label.x = 7)+
     stat_compare_means(label = "p.signif", method = "t.test",ref.group = "H2O", 
-                       label.y = c(34, 31, 27, 24, 21, 17, 15, 0))
-###Determine that 10^0 meassurments are basically like NTC
+                       label.y = c(40, 39, 33, 30.5, 24, 20, 16, 0))
+###Determine that 10^0 and 10^1 meassurments are basically like NTC when all the information is taken into account
 
 ##Compair mock samples qPCR estimation with real oocyst count by two extraction methods
 set.seed(2020)
