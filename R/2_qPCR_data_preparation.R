@@ -89,11 +89,12 @@ data.unk%>%
 data.inf<-read.csv("data/Eimeria_quantification_Inf_exp_data.csv")
 data.inf%>%
     select(Content, Sample, Plate_number, Cq, Melt_Temperature)%>%
-    dplyr::rename(Ct= Cq, labels= Sample, Task= Content, Tm= Melt_Temperature)-> data.inf
+    dplyr::rename(Ct= Cq, labels= Sample, Task= Content, Tm= Melt_Temperature)%>%
+    dplyr::mutate(Cycler= "BioRad")-> data.inf
   
 ##Define numeric and factor variables 
 num.vars3 <- c("Ct", "Tm")
-fac.vars3 <- c("labels", "Task", "Plate_number")  
+fac.vars3 <- c("labels", "Task", "Plate_number", "Cycler")  
 data.inf[, num.vars3] <- apply(data.inf[, num.vars3], 2,
                                function (x) as.numeric(as.character(x)))
 data.inf[, fac.vars3] <- apply(data.inf[, fac.vars3], 2, as.factor)
@@ -433,42 +434,25 @@ data.spk.lm%>%
     annotation_logticks(sides = "bl")-> D
 
 ##Figure 3 comparison between Eimeria genome copies from oocyst DNA and from fecal DNA 
-pdf(file = "fig/Figure_3.pdf", width = 10, height = 8)
-grid.arrange(D)
-dev.off()
+#pdf(file = "fig/Figure_3.pdf", width = 10, height = 8)
+#grid.arrange(D)
+#dev.off()
 
 ##Model 13: Genome copies/ng gDNA modeled by Oocyst count, cycler and parasite as predictors
 lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count), data = subset(data.spk.lm, Task== "Unknown"))
 
-## pdf(file = "fig/Figure_2.pdf", width = 20, height = 15)
-## grid.arrange(D,E,G, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
-## dev.off()
 
-## # Error in grob$wrapvp <- vp : object of type 'closure' is not subsettable
-## ## In addition: There were 21 warnings (use warnings() to see them)
-
-### why are those created in the first place if they are removed here?
-### D was acutally never created!!!
-## rm(data.mock, data.unk, data.std, D, E, G)
-
-## Infection experiment --- well is this now what it is all about?
-
-## Considering the standard curve generated with the data from the BioRad Cycler
-## Ct = 42x -4(log10Number of genome number per uL gDNA) Figure 1.1B
-## Number of genome copies = 10^((Ct-42)/-4)
-
-## Estimate number of genome copies with qPCR Ct value 
-
+######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
 data.inf %>% 
     dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
                                         Tm >= 80   ~ "Negative",
-                                        Tm < 80 ~ "Positive")) -> data.inf #%>%
-    #dplyr::mutate(Qty= 10^((Ct-42)/-4), Genome_copies= 10^((Ct-42)/-4)) -> data.inf
+                                        Tm < 80 ~ "Positive")) -> data.inf 
 
-data.inf$Genome_copies<- 10^predict(lm.GC1, data.inf)
-## data.inf$residuals<- 10^residuals(lm.GC1, data.inf) ## breaks
+##Estimate number of genome copies with qPCR Ct value (Model 8)
+data.inf$Genome_copies<- 10^predict(lm.SCCyc, data.inf)
 
+##Summarise genome copies by sample  
 data.inf %>%
     select(Genome_copies,labels) %>% # select variables to summarise
     na.omit()%>%
@@ -476,11 +460,13 @@ data.inf %>%
     dplyr::summarise_each(funs(Genome_copies_min = min, Genome_copies_q25 = quantile(., 0.25),
                                Genome_copies_median = median, Genome_copies_q75 = quantile(., 0.75), 
                                Genome_copies_max = max, Genome_copies_mean = mean, Genome_copies_sd = sd)) -> Sum.inf
-
+##qPCR data from 236 samples
 ## Tm values were not sumarised to avoid problems in the function 
 
+##Join summirised data
 data.inf<- inner_join(data.inf, Sum.inf, by= "labels")
 
+##Eliminate an unprocessed sample and controls
 data.inf%>%
     select(labels, Genome_copies_mean, Infection)%>%
     filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
