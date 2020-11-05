@@ -473,8 +473,4 @@ data.inf.exp%>%
     dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))-> data.inf.exp
 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
-rm(data.inf, data.std, Sum.inf)
-
-
-### There were 11 warnings (use warnings() to see them)
-### I didn't take care of these for now!! TODO!!!
+rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)
