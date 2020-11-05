@@ -86,18 +86,18 @@ data.unk%>%
   filter(Sample_type=="Feces" & Task=="Unknown")-> data.spk
   
 ##Infection experiment
-data.inf<-read.csv("data/Eimeria_quantification_Inf_exp_data.csv")
-data.inf%>%
+data.inf.exp<-read.csv("data/Eimeria_quantification_Inf_exp_data.csv")
+data.inf.exp%>%
     select(Content, Sample, Plate_number, Cq, Melt_Temperature)%>%
     dplyr::rename(Ct= Cq, labels= Sample, Task= Content, Tm= Melt_Temperature)%>%
-    dplyr::mutate(Cycler= "BioRad")-> data.inf
+    dplyr::mutate(Cycler= "BioRad")-> data.inf.exp
   
 ##Define numeric and factor variables 
 num.vars3 <- c("Ct", "Tm")
 fac.vars3 <- c("labels", "Task", "Plate_number", "Cycler")  
-data.inf[, num.vars3] <- apply(data.inf[, num.vars3], 2,
+data.inf.exp[, num.vars3] <- apply(data.inf.exp[, num.vars3], 2,
                                function (x) as.numeric(as.character(x)))
-data.inf[, fac.vars3] <- apply(data.inf[, fac.vars3], 2, as.factor)
+data.inf.exp[, fac.vars3] <- apply(data.inf.exp[, fac.vars3], 2, as.factor)
   
 
 rm(fac.vars, num.vars, fac.vars2, num.vars2, fac.vars3, num.vars3)
@@ -444,16 +444,16 @@ lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count), data = su
 
 ######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
-data.inf %>% 
+data.inf.exp %>% 
     dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
                                         Tm >= 80   ~ "Negative",
-                                        Tm < 80 ~ "Positive")) -> data.inf 
+                                        Tm < 80 ~ "Positive")) -> data.inf.exp 
 
 ##Estimate number of genome copies with qPCR Ct value (Model 8)
-data.inf$Genome_copies<- 10^predict(lm.SCCyc, data.inf)
+data.inf.exp$Genome_copies<- 10^predict(lm.SCCyc, data.inf.exp)
 
 ##Summarise genome copies by sample  
-data.inf %>%
+data.inf.exp %>%
     select(Genome_copies,labels) %>% # select variables to summarise
     na.omit()%>%
     dplyr::group_by(labels)%>%
@@ -464,15 +464,15 @@ data.inf %>%
 ## Tm values were not sumarised to avoid problems in the function 
 
 ##Join summirised data
-data.inf<- inner_join(data.inf, Sum.inf, by= "labels")
+data.inf.exp<- inner_join(data.inf.exp, Sum.inf, by= "labels")
 
 ##Eliminate an unprocessed sample and controls
-data.inf%>%
+data.inf.exp%>%
     select(labels, Genome_copies_mean, Infection)%>%
     filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
     dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))-> data.inf.exp
 
-### why on earth creat something to delete it then? What is really needed here?
+##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
 rm(data.inf, data.std, Sum.inf)
 
 
