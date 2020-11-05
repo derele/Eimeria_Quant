@@ -20,10 +20,11 @@ setdiff(sample.data$labels, data.inf.exp$labels)
 ##Samples MTU, FJL, EHM, DRT, CEY were not taken 
 ##Sample CPY was taken but not extracted (Faeces not found in boxes)
 ##Sample FLM was collected and extracted but not processed for qPCR (DNA not found)
+##We end with 235 samples out of the original 242
 
-### Join all the data in the same dataframe 
+###Join all the data in the same dataframe
 sdt<- inner_join(sample.data, data.inf.exp, by="labels") ## Add qPCR data
-
+###Tiny adjustment  
 sdt$dpi<- as.factor(sdt$dpi)
 
 ###Let's start plotting and analysing the data!
@@ -36,7 +37,7 @@ sdt%>%
   scale_x_log10(name = "log10 Oocyst per gram feces (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Genome copies/µL gDNA (qPCR)", 
+  scale_y_log10(name = "log10 Genome copies/ng gDNA (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
