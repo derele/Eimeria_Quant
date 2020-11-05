@@ -1,8 +1,5 @@
 ### Code to analyse
 ## 1) Correlation among qPCR and oocyst flotation quantification
-
-
-## not clear (below) whether this should be used!
 ### library(ggsci)
 
 if(!exists("sample.data")){
@@ -15,7 +12,6 @@ if(!exists("sdt")){
 
 ###Let's start plotting and analysing the data!
 ### 1) Correlation among Eimeria quantification methods
-
 ####Genome copies modeled by OPGs 
 sdt%>%
   ggplot(aes(OPG+0.1, Genome_copies_gFaeces))+
@@ -43,7 +39,6 @@ summary(DNAbyOPG)
 DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+0.1)*dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
-
 ##Comparison of models
 anova(DNAbyOPG, DNAbyOPG_dpi)
 
@@ -73,8 +68,9 @@ OPGbyDNA_dpi <- lm(log10(OPG+0.1)~log10(Genome_copies_gFaeces)*dpi,
 summary(OPGbyDNA_dpi)
 
 ##Comparison of models
-anova(DNAbyOPG, DNAbyOPG_dpi)
+anova(OPGbyDNA, OPGbyDNA_dpi)
 
+##Linear models by DPI
 sdt%>%
     ggplot(aes(Genome_copies_gFaeces, OPG+0.1, fill=dpi))+
     geom_smooth(method = lm, se=FALSE, aes(Genome_copies_gFaeces, OPG+0.1, color=dpi))+
@@ -86,8 +82,9 @@ sdt%>%
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+
     geom_point(shape=21, size=5) +
     theme_bw()+
-  annotation_logticks()-> opgqpcrDPI
+  annotation_logticks()
 
+##Weak correlation between measurments by DPI :S 
 
 ###Course of infection 
 ## Oocysts
@@ -95,14 +92,14 @@ sdt%>%
   ggplot(aes(dpi, OPG))+
   geom_boxplot()+
   xlab("Day post infection")+
-  scale_y_log10("log10 Oocyst per gram feces (Flotation)", 
+  scale_y_log10("log10 Oocyst per gram faeces (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
   labs(tag= "A)")+
   theme_bw()+
   theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")-> a
+  annotation_logticks(sides = "l")-> A1
 
 sdt%>%
   dplyr::arrange(dpi)%>%
@@ -118,25 +115,25 @@ sdt%>%
   theme_bw()+
   theme(text = element_text(size=16))+
   stat_smooth(color= "black", method = "loess")+
-  annotation_logticks(sides = "l")-> a2
+  annotation_logticks(sides = "l")-> A2
 
-##qPCR
+##Genome copies/g of faeces
 sdt%>%
-  ggplot(aes(dpi, Genome_copies_mean))+
+  ggplot(aes(dpi, Genome_copies_gFaeces))+
   geom_boxplot()+
   xlab("Day post infection")+
-  scale_y_log10(name = "log10 Genome copies/µL gDNA (qPCR)", 
+  scale_y_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+ 
   geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
   labs(tag= "B)")+
   theme_bw()+
   theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")-> b
+  annotation_logticks(sides = "l")-> B1
 
 sdt%>%
   dplyr::arrange(dpi)%>%
-  ggplot(aes(as.numeric(as.character(dpi)), Genome_copies_mean, colour= EH_ID))+
+  ggplot(aes(as.numeric(as.character(dpi)), Genome_copies_gFaeces, colour= EH_ID))+
   xlab("Day post infection")+
   scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
@@ -148,15 +145,14 @@ sdt%>%
   theme_bw()+
   theme(text = element_text(size=16))+
   stat_smooth(color= "black", method = "loess")+
-  annotation_logticks(sides = "l")-> b2
+  annotation_logticks(sides = "l")-> B2
 
-### Predictions Early DNA vs Late Oocysts
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
+  dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces)%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
-  ggplot(aes(x= dpi, y= Genome_copies_mean))+
+  ggplot(aes(x= dpi, y= Genome_copies_gFaeces))+
   scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
@@ -164,368 +160,96 @@ sdt%>%
   geom_point(aes(color=dpi))+
   xlab("Day post infection")+
   geom_line(aes(group = EH_ID), color= "gray")+
-    ## so which one?
-    ##   scale_color_npg()+
   scale_color_brewer(palette = "Set3")+
   labs(tag= "A)")+
   theme_bw()+
   theme(text = element_text(size=16))+
   annotation_logticks(sides = "l")+
   #stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = TRUE, na.rm = TRUE)+
-  stat_compare_means(method =  "anova")-> dna3_10
+  stat_compare_means(method =  "anova")
 
-## sup2 <- as.data.frame(compare_means(formula = Genome_copies_mean~dpi,
-##                                     ref.group = "0", method = "wilcox.test",
-##                                     paired = TRUE, data = sdt))
-
-## Error in h(simpleError(msg, call)) : error in evaluating the
-##   argument 'x' in selecting a method for function 'as.data.frame':
-##   'x' and 'y' must have the same length
-
-## Write.csv(sup2, "/SAN/Victors_playground/Eimeria_microbiome/Supplementary_table_1.csv",
-## row.names = FALSE)
-
-## sdt%>%
-##     filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
-##     dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-##     dplyr::arrange(EH_ID)%>%
-##     dplyr::arrange(dpi)%>% ##for comparison 
-##     ggplot(aes(x= dpi, y= OPG))+
-##     scale_y_log10("log10 Oocysts per gram feces (Flotation)", 
-##                 breaks = scales::trans_breaks("log10", function(x) 10^x),
-##                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-##     geom_boxplot(aes(color= dpi))+
-##     geom_point(aes(color=dpi))+
-##     xlab("Day post infection")+
-##     geom_line(aes(group = EH_ID), color= "gray")+
-##     scale_color_npg()+
-##     labs(tag= "B)")+
-##     theme_bw()+
-##     theme(text = element_text(size=16))+
-##     annotation_logticks(sides = "l")+
-##     stat_compare_means("anova")-> oocyst3_10
-
-## # Error: `mapping` must be created by `aes()` Run
-## # `rlang::last_error()` to see where the error occurred.
-
-## compare_means(formula = OPG~dpi, method = "wilcox.test", ref.group = "3",paired = TRUE, data = sdt)
-
-### Error in wilcox.test.default(xi, xj, paired = paired, ...) : 'x'
-###   and 'y' must have the same length
-
-### Do Eimeria DNA in early dpi can predict the oocyst at pick day?
-##for comparison between early DNA and Pick oocysts
+##Weight loss 
 sdt%>%
-  filter(dpi%in%c("3","6"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>% 
-  ggplot(aes(x= dpi, y= OPG))+
-  scale_y_log10("log10 Oocysts per gram feces (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
+  ggplot(aes(dpi, weightloss))+
+  geom_boxplot()+
   xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_npg()+
-  labs(tag= "A)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")+
-  coord_cartesian(ylim = c(100, 10000000))-> oocyst36
-
-sdt%>%
-  filter(dpi%in%c("3","6"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>% 
-  ggplot(aes(x= dpi, y= Genome_copies_mean))+
-  scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
-  xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_npg()+
+  scale_y_continuous(name = "Weight loss")+ 
+  geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
   labs(tag= "B)")+
   theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")+
-  coord_cartesian(ylim = c(100, 10000000))-> dna36
+  theme(text = element_text(size=16))-> C1
 
+## DNA as a predictor of weightloss
 sdt%>%
-  dplyr::arrange(dpi)%>%
-  filter(dpi%in%c("3"))%>%
-  dplyr::select(EH_ID,dpi,Genome_copies_mean)-> earlyDNA
+   ggplot(aes(Genome_copies_gFaeces, weightloss))+
+   geom_smooth(method = lm, color= "black")+
+   scale_y_continuous(name = "Weight loss to 0 dpi")+
+   scale_x_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
+                 breaks = scales::trans_breaks("log10", function(x) 10^x),
+                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
+   labs(tag= "B)")+
+   theme_bw()+
+   theme(text = element_text(size=16))#+
+   #stat_cor(label.x = 2.0, label.y = 84, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
+   #stat_regline_equation(label.x = 2.0, label.y = 88)
 
+##Model 5: Genome copies/g of feaces as predictor of weight loss 
+WlbyDNA <- lm(weightloss~log10(Genome_copies_gFaeces),
+               data = sdt, na.action = na.exclude)
+summary(WlbyDNA)
+##Model 6: Genome copies/g of feaces as predictor of weight loss with DPI interaction
+WlbyDNA_dpi <- lm(weightloss~log10(Genome_copies_gFaeces)*dpi,
+                   data = sdt, na.action = na.exclude)
+summary(WlbyDNA_dpi)
+
+##Comparison of models
+anova(WlbyDNA, WlbyDNA_dpi)
+
+## OPG as a predictor of weightloss
 sdt%>%
-  dplyr::arrange(dpi)%>%
-  filter(dpi%in%c("6"))%>%
-  dplyr::select(EH_ID,dpi,OPG)-> pickOoc
-
-elop <- inner_join(earlyDNA, pickOoc, by= "EH_ID")
-
-rm(pickOoc)
-
-set.seed(2020)
-elop%>%
-  dplyr::select(EH_ID,Genome_copies_mean,OPG)%>%
-  ggplot(aes(Genome_copies_mean, OPG))+
-  geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 Genome copies/µL gDNA dpi 3 (qPCR)", 
+  ggplot(aes(OPG, weightloss))+
+  geom_smooth(method = lm, color= "black")+
+  scale_y_continuous(name = "Weight loss to 0 dpi")+
+  scale_x_log10(name = "log10 Oocysts per gram of faeces (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Oocyst per gram feces dpi 6 (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= EH_ID), color= "black")+
-  labs(tag= "C)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  stat_cor(label.x = 2.25, label.y = 4.5, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-  stat_regline_equation(label.x = 2.25, label.y = 5.0)+
-  stat_cor(label.x = 2.25,  label.y = 4.75,method = "spearman")+
-  annotation_logticks()+
-  coord_cartesian(ylim = c(10000, 10000000))-> elopp
-
-sdt%>%
-  dplyr::arrange(dpi)%>%
-  filter(dpi%in%c("7"))%>%
-  dplyr::select(EH_ID,dpi,OPG)-> lateOoc ## DPI where most of samples still are excreting oocyst after the pick 
-
-
-elod <- inner_join(earlyDNA, lateOoc, by= "EH_ID")
-
-summary(lm(OPG~Genome_copies_mean,  data = elop)) ## Using just genome copies as predictor
-anova(lm(OPG~Genome_copies_mean,  data = elod))
-
-### Do Eimeria DNA at early dpi can predict the oocyst at late dpi?
-sdt%>%
-  filter(dpi%in%c("3","7"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>%
-  ggplot(aes(x= dpi, y= OPG))+
-  scale_y_log10("log10 Oocysts per gram feces (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
-  xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_npg()+
-  labs(tag= "A)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")+
-  coord_cartesian(ylim = c(100, 10000000))-> oocyst37
-
-sdt%>%
-  filter(dpi%in%c("3","7"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>%
-  ggplot(aes(x= dpi, y= Genome_copies_mean))+
-  scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
-  xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_npg()+
+  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
   labs(tag= "B)")+
   theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")+
-  coord_cartesian(ylim = c(100, 10000000))-> dna37
+  theme(text = element_text(size=16))
 
+## sdt$RelWeight<- (sdt$weight/sdt$weight_dpi0)*100 ##Check with Alice 
+## summary(lm(RelWeight~Genome_copies_mean, sdt))
 
+############## Create Time-Series (Alice and Susi analysis)####################
+#require("reshape")
+#sdt%>%
+#  dplyr::select(EH_ID, dpi, Genome_copies_mean)%>%
+#  dplyr::arrange(EH_ID)%>%
+#  dplyr::arrange(dpi)%>%
+#  na.exclude()-> dna
+#dna<- reshape(dna, idvar = "EH_ID", timevar = "dpi", direction = "wide")
 
-set.seed(2020)
-elod%>%
-  dplyr::select(EH_ID,Genome_copies_mean,OPG)%>%
-  ggplot(aes(Genome_copies_mean, OPG))+
-  geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 Genome copies/µL gDNA dpi 3 (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Oocyst per gram feces dpi 7 (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= EH_ID), color= "black")+
-  labs(tag= "C)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  stat_cor(label.x = 2.25, label.y = 4.75, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-  stat_regline_equation(label.x = 2.25, label.y = 5.0)+
-  stat_cor(label.x = 2.25,  label.y = 4.5,method = "spearman")+
-  annotation_logticks()+
-  coord_cartesian(ylim = c(10000, 10000000))-> elodp
+#sdt%>%
+#  dplyr::select(EH_ID, dpi, OPG)%>%
+#  dplyr::arrange(EH_ID)%>%
+#  dplyr::arrange(dpi)%>%
+#  na.exclude()-> oocysts
+#oocysts<- reshape(oocysts, idvar = "EH_ID", timevar = "dpi", direction = "wide")
 
-summary(lm(OPG~Genome_copies_mean,  data = elod)) ## Using just genome copies as predictor
-anova(lm(OPG~Genome_copies_mean,  data = elod))
+#ts.data<- inner_join(oocysts, dna, by= "EH_ID")
 
-### Do Eimeria DNA at early dpi can predict the oocyst before pick dpi?
-sdt%>%
-  filter(dpi%in%c("3","5"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>%
-  ggplot(aes(x= dpi, y= OPG))+
-  scale_y_log10("log10 Oocysts per gram feces (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
-  xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_npg()+
-  labs(tag= "A)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")+
-  coord_cartesian(ylim = c(100, 10000000))-> oocyst35
+#ts.data%>%
+#  dplyr::rowwise()%>%
+#  dplyr::mutate(Sum_Oocysts= sum(c(OPG.0,OPG.3,OPG.4,OPG.5,OPG.6,OPG.7,OPG.8,OPG.9,OPG.10)))-> ts.data
+#ts.data<- na.omit(ts.data)
 
-sdt%>%
-  filter(dpi%in%c("3","5"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>%
-  ggplot(aes(x= dpi, y= Genome_copies_mean))+
-  scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
-  xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_npg()+
-  labs(tag= "B)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")+
-  coord_cartesian(ylim = c(100, 10000000))-> dna35
+#ts.data%>%
+#  dplyr::rowwise()%>%
+#  dplyr::mutate(Max_Oocysts= max(c(OPG.0,OPG.3,OPG.4,OPG.5,OPG.6,OPG.7,OPG.8,OPG.9,OPG.10)))-> ts.data
 
-sdt%>%
-  dplyr::arrange(dpi)%>%
-  filter(dpi%in%c("5"))%>%
-  dplyr::select(EH_ID,dpi,OPG)-> beforeOoc ## DPI where most of samples still are excreting oocyst before the pick 
-
-elob<- inner_join(earlyDNA, beforeOoc, by= "EH_ID")
-
-set.seed(2020)
-elob%>%
-  dplyr::select(EH_ID,Genome_copies_mean,OPG)%>%
-  ggplot(aes(Genome_copies_mean, OPG))+
-  geom_smooth(method = lm, col="black")+
-  scale_x_log10(name = "log10 Genome copies/µL gDNA dpi 3 (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Oocyst per gram feces dpi 5 (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= EH_ID), color= "black")+
-  labs(tag= "C)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  stat_cor(label.x = 2.25, label.y = 6.25, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-  stat_regline_equation(label.x = 2.25, label.y = 6.5)+
-  stat_cor(label.x = 2.25,  label.y = 6.0,method = "spearman")+
-  annotation_logticks()+
-  coord_cartesian(ylim = c(10000, 10000000))-> elobp
-
-summary(lm(OPG~Genome_copies_mean,  data = elob)) ## Using just genome copies as predictor
-anova(lm(OPG~Genome_copies_mean,  data = elob))
-
-##Using lm for time-series analysis
-
-summary(glm(OPG~Genome_copies_mean*dpi,  data = sdt, na.action = na.exclude)) ## Using just genome copies as predictor
-anova(glm(OPG~Genome_copies_mean*dpi,  data = sdt, na.action = na.exclude))
-
-## Create Time-Series
-require("reshape")
-sdt%>%
-  dplyr::select(EH_ID, dpi, Genome_copies_mean)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>%
-  na.exclude()-> dna
-dna<- reshape(dna, idvar = "EH_ID", timevar = "dpi", direction = "wide")
-
-sdt%>%
-  dplyr::select(EH_ID, dpi, OPG)%>%
-  dplyr::arrange(EH_ID)%>%
-  dplyr::arrange(dpi)%>%
-  na.exclude()-> oocysts
-oocysts<- reshape(oocysts, idvar = "EH_ID", timevar = "dpi", direction = "wide")
-
-ts.data<- inner_join(oocysts, dna, by= "EH_ID")
-
-ts.data%>%
-  dplyr::rowwise()%>%
-  dplyr::mutate(Sum_Oocysts= sum(c(OPG.0,OPG.3,OPG.4,OPG.5,OPG.6,OPG.7,OPG.8,OPG.9,OPG.10)))-> ts.data
-
-ts.data<- na.omit(ts.data)
-
-ts.data%>%
-  dplyr::rowwise()%>%
-  dplyr::mutate(Max_Oocysts= max(c(OPG.0,OPG.3,OPG.4,OPG.5,OPG.6,OPG.7,OPG.8,OPG.9,OPG.10)))-> ts.data
-
-##Confirm what Alice observed correlation between Summ of oocyst sheded through the infection and max OPG
-####OPG vs qPCR 
-ts.data%>%
-  ggplot(aes(Sum_Oocysts, Max_Oocysts))+
-  geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 Sum Oocyst per gram feces", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Max Oocyst per gram feces", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= EH_ID), color= "black")+
-  labs(tag= "C)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  stat_cor(label.x = 5.5, label.y = 1.5, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-  stat_regline_equation(label.x = 5.5, label.y = 2)+
-  stat_cor(label.x = 5.5,  label.y = 1,method = "spearman")+
-  annotation_logticks()-> opgmaxsum
-
-
-
-### OKAY, I HAVE TO STOP HERE, the below would take to much time to fix!
-
-## Why are so many different datasets created? What is the goal here?
-
-## I need to start working on the presentation... and come back to this later
-
-## And is it even needed???
-
-
-### Models
-##Check distribution of data  ## RUBBISH!! STOP DOING THAT!!
-## require("fitdistrplus")
-## require("logspline")
-
-## plotdist(x, histo = TRUE, demp = TRUE)
-## descdist(x, boot = 1000)
-## fn <- fitdist(x, "norm")
-## fln<- fitdist(x, "lnorm")
-## fw <- fitdist(x, "weibull")
-## fnb<- fitdist(x, "nbinom")
-## plot(fn)
-## plot(fln)
-## plot(fw)
-## plot(fnb)
-## par(mfrow = c(2, 2))
-## plot.legend <- c("NegBinom", "Lognormal", "Weibull", "Normal")
-## denscomp(list(fnb, fln, fw, fn), legendtext = plot.legend)
-## qqcomp(list(fnb, fln, fw, fn), legendtext = plot.legend)
-## cdfcomp(list(fnb, fln, fw, fn), legendtext = plot.legend)
-## ppcomp(list(fnb, fln, fw, fn), legendtext = plot.legend)
-## ##Total OPGs during infection are predicted by DNA at different dpi? Genome copies per dpi as individual predictors
+##Total OPGs during infection are predicted by DNA at different dpi? Genome copies per dpi as individual predictors
 
 ## sum.opg <- glm.nb(formula = Sum_Oocysts~ Genome_copies_mean.0+
 ##       Genome_copies_mean.1+
@@ -661,148 +385,23 @@ ts.data%>%
 ##   annotation_logticks()+
 ##   coord_cartesian(ylim = c(10000, 10000000))-> ts6
 
-## ####Weight loss
-## ## DNA as a predictor of weightloss
-## sdt%>%
-##   ggplot(aes(Genome_copies_mean, (weight/weight_dpi0)*100))+
-##   geom_smooth(method = lm, color= "black")+
-##   scale_y_continuous(name = "Relative weight loss to 0 dpi (%)")+
-##   scale_x_log10(name = "log10 Genome copies/µL gDNA (qPCR)", 
-##                 breaks = scales::trans_breaks("log10", function(x) 10^x),
-##                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-##   #annotation_logticks("b")+
-##   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-##   labs(tag= "B)")+
-##   theme_bw()+
-##   theme(text = element_text(size=16))+
-##   stat_cor(label.x = 2.0, label.y = 84, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-##   stat_regline_equation(label.x = 2.0, label.y = 88)+
-##   stat_cor(label.x = 2.0,  label.y = 86,method = "spearman")-> wlqpcr
-
-## sdt$RelWeight<- (sdt$weight/sdt$weight_dpi0)*100
-## summary(lm(RelWeight~Genome_copies_mean, sdt))
-
-## ## Weight loss
-## sdt%>%
-##   ggplot(aes(dpi, (weight/weight_dpi0)*100))+
-##   geom_boxplot()+
-##   xlab("Day post infection")+
-##   scale_y_continuous("Relative weight loss at 0 dpi (%)")+
-##   geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
-##   labs(tag= "A)")+
-##   theme_bw()+
-##   theme(text = element_text(size=16))-> ai
-
-## ### Predictions Early DNA vs Late Oocysts
-## sdt%>%
-##   filter(dpi%in%c("3","4", "6", "7", "8", "9", "10"))%>%
-##   select(EH_ID, dpi,OPG, Genome_copies_mean, weight, weight_dpi0)%>%
-##   dplyr::arrange(EH_ID)%>%
-##   dplyr::arrange(dpi)%>% ##for comparison 
-##   ggplot(aes(x= dpi, y= (weight/weight_dpi0)*100))+
-##   scale_y_continuous("Relative weight loss at 0 dpi (%)")+
-##   geom_boxplot(aes(color= dpi))+
-##   geom_point(aes(color=dpi))+
-##   xlab("Day post infection")+
-##   geom_line(aes(group = EH_ID), color= "gray")+
-##   scale_color_npg()+
-##   labs(tag= "A)")+
-##   theme_bw()+
-##   theme(text = element_text(size=16))+
-##   #stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "3", paired = TRUE, na.rm = TRUE)+
-##   stat_compare_means(method =  "anova")-> weight3_10
-
-## compare_means(formula = Genome_copies_mean~dpi, method = "wilcox.test", ref.group = "3",paired = TRUE, data = sdt)
-
-## ##for comparison between early DNA and Pick oocysts
-## sdt%>%
-##   filter(dpi%in%c("3","6"))%>%
-##   select(EH_ID, dpi,OPG, Genome_copies_mean, weight, weight_dpi0)%>%
-##   dplyr::arrange(EH_ID)%>%
-##   dplyr::arrange(dpi)%>% 
-##   ggplot(aes(x= dpi, y= (weight/weight_dpi0)*100))+
-##   scale_y_continuous("Relative weight loss at 0 dpi (%)")+
-##   geom_boxplot(aes(color= dpi))+
-##   geom_point(aes(color=dpi))+
-##   xlab("Day post infection")+
-##   geom_line(aes(group = EH_ID), color= "gray")+
-##   scale_color_npg()+
-##   labs(tag= "A)")+
-##   theme_bw()+
-##   theme(text = element_text(size=16))-> weight36
-
-## sdt%>%
-##   dplyr::arrange(dpi)%>%
-##   filter(dpi%in%c("6"))%>%
-##   select(EH_ID,dpi, weight, weight_dpi0, weightloss)-> pickweight
-
-## elopw<- join(earlyDNA, pickweight, by= "EH_ID")
-## rm(pickweight)
-
-## set.seed(2020)
-## elopw%>%
-##   dplyr::select(EH_ID,Genome_copies_mean, weight, weight_dpi0, weightloss)%>%
-##   ggplot(aes(Genome_copies_mean, (weight/weight_dpi0)*100))+
-##   geom_smooth(method = lm)+
-##   scale_x_log10(name = "log10 Genome copies/µL gDNA dpi 3 (qPCR)", 
-##                 breaks = scales::trans_breaks("log10", function(x) 10^x),
-##                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-##   scale_y_continuous("Relative Weight loss at 6 to 0 dpi")+
-##   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= EH_ID), color= "black")+
-##   labs(tag= "C)")+
-##   theme_bw()+
-##   theme(text = element_text(size=16))+
-##   stat_cor(label.x = 2.25, label.y = 83.5, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-##   stat_regline_equation(label.x = 2.25, label.y = 87.5)+
-##   stat_cor(label.x = 2.25,  label.y = 85,method = "spearman")#+
-##   #annotation_logticks("b")+
-##   #coord_cartesian(ylim = c(10000, 10000000))-> elopp
+## ts.data%>%
+##  ggplot(aes(Sum_Oocysts, Max_Oocysts))+
+##  geom_smooth(method = lm, col= "black")+
+##  scale_x_log10(name = "log10 Sum Oocyst per gram feces", 
+##                breaks = scales::trans_breaks("log10", function(x) 10^x),
+##                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+##  scale_y_log10(name = "log10 Max Oocyst per gram feces", 
+##                breaks = scales::trans_breaks("log10", function(x) 10^x),
+##                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+##  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= EH_ID), color= "black")+
+##  labs(tag= "C)")+
+##  theme_bw()+
+##  theme(text = element_text(size=16))+
+##  stat_cor(label.x = 5.5, label.y = 1.5, aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
+##  stat_regline_equation(label.x = 5.5, label.y = 2)+
+##  stat_cor(label.x = 5.5,  label.y = 1,method = "spearman")+
+##  annotation_logticks()-> opgmaxsum
 
 ## ##Save plots
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_3.pdf", width = 10, height = 20)
-## grid.arrange(a,b,opgqpcr, ncol= 1, nrow= 3)
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_3.1.pdf", width = 10, height = 8)
-## a
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_3.2.pdf", width = 10, height = 8)
-## b
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_3.3.pdf", width = 10, height = 8)
-## opgqpcr
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_4.pdf", width = 20, height = 10)
-## grid.arrange(oocyst36, dna36, elopp, oocyst37, dna37, elodp, ncol= 3, nrow= 2)
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_4.1.pdf", width = 10, height = 10)
-## grid.arrange(oocyst36, dna36, elopp, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_4.2.pdf", width = 10, height = 10)
-## grid.arrange(oocyst37, dna37, elodp, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_4.3.pdf", width = 10, height = 10)
-## grid.arrange(oocyst35, dna35, elobp, widths = c(1, 1), layout_matrix = rbind(c(1, 2), c(3, 3)))
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_4.4.pdf", width = 25, height = 8)
-## grid.arrange(elobp, elopp, elodp, ncol= 3, nrow= 1)
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_4.5.pdf", width = 25, height = 10)
-## grid.arrange(tssum, tsmax, ts6, ncol= 3, nrow= 1)
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_5.1.pdf", width = 10, height = 8)
-## ai
-## dev.off()
-
-## pdf(file = "~/AA_Microbiome/Figures/Oocysts_qPCR_Manuscript/Figure_5.2.pdf", width = 10, height = 8)
-## wlqpcr
-## dev.off()
+##Define later which plots from here will be included 
