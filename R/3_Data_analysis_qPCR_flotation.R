@@ -9,53 +9,79 @@ if(!exists("sample.data")){
   source("R/1_Data_preparation.R")
 }
 
-if(!exists("data.inf.exp")){
+if(!exists("sdt")){
     source("R/2_qPCR_data_preparation.R")
 }
-
 
 ###Let's start plotting and analysing the data!
 ### 1) Correlation among Eimeria quantification methods
 
-####OPG vs qPCR 
+####Genome copies modeled by OPGs 
 sdt%>%
-  ggplot(aes(OPG, Genome_copies_mean))+
+  ggplot(aes(OPG+0.1, Genome_copies_gFaeces))+
   geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 Oocyst per gram feces (Flotation)", 
+  scale_x_log10(name = "log10 Oocyst per gram faeces (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Genome copies/ng gDNA (qPCR)", 
+  scale_y_log10(name = "log10 Genome copies/g faeces (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-  labs(tag= "C)")+
+  labs(tag= "A)")+
   theme_bw()+
   theme(text = element_text(size=16))+
-    stat_cor(label.x = 5.5, label.y = 1.5,
-             aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-  stat_regline_equation(label.x = 5.5, label.y = 2)+
-  stat_cor(label.x = 5.5,  label.y = 1,method = "spearman")+
-  annotation_logticks()-> opgqpcr
+  #stat_cor(label.x = 5.5, label.y = 1.5,
+  #           aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
+  #stat_regline_equation(label.x = 5.5, label.y = 2)+
+  annotation_logticks()
 
-OPGbyDNA <- lm(log10(OPG+.01)~log10(Genome_copies_mean+.01),
+##Model 1: Genome copies/g faeces modeled by OPG
+DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+0.1),
                data = sdt, na.action = na.exclude)
-
-OPGbyDNA_dpi <- lm(log10(OPG+0.1)~log10(Genome_copies_mean+0.1)*dpi,
+summary(DNAbyOPG)
+##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
+DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+0.1)*dpi,
                    data = sdt, na.action = na.exclude)
+summary(DNAbyOPG_dpi)
 
-summary(OPGbyDNA)
+##Comparison of models
+anova(DNAbyOPG, DNAbyOPG_dpi)
 
-summary(OPGbyDNA_dpi)
-
-anova(OPGbyDNA, OPGbyDNA_dpi)
-
+####OPGs modeled by Genome copies 
 sdt%>%
-    ggplot(aes(Genome_copies_mean+0.1, OPG+0.1, fill=dpi))+
-    geom_smooth(method = lm, se=FALSE, aes(Genome_copies_mean+0.1, OPG+0.1, color=dpi))+
-    scale_y_continuous(name = "log10 Oocyst per gram feces (Flotation)", 
+  ggplot(aes(Genome_copies_gFaeces, OPG+0.1))+
+  geom_smooth(method = lm, col= "black")+
+  scale_y_log10(name = "log10 Oocyst per gram faeces (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-    scale_x_continuous(name = "log10 Genome copies/µL gDNA (qPCR)", 
+  scale_x_log10(name = "log10 Genome copies/g faeces (qPCR)", 
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
+  labs(tag= "A)")+
+  theme_bw()+
+  theme(text = element_text(size=16))+
+  annotation_logticks()
+
+##Model 3: OPG modeled by Genome copies/g faeces
+OPGbyDNA <- lm(log10(OPG+0.1)~log10(Genome_copies_gFaeces),
+               data = sdt, na.action = na.exclude)
+summary(OPGbyDNA)
+##Model 4: Genome copies/g faeces modeled by OPG with DPI interaction
+OPGbyDNA_dpi <- lm(log10(OPG+0.1)~log10(Genome_copies_gFaeces)*dpi,
+                   data = sdt, na.action = na.exclude)
+summary(OPGbyDNA_dpi)
+
+##Comparison of models
+anova(DNAbyOPG, DNAbyOPG_dpi)
+
+sdt%>%
+    ggplot(aes(Genome_copies_gFaeces, OPG+0.1, fill=dpi))+
+    geom_smooth(method = lm, se=FALSE, aes(Genome_copies_gFaeces, OPG+0.1, color=dpi))+
+    scale_y_log10(name = "log10 Oocyst per gram feces (Flotation)", 
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+    scale_x_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
                   breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+
     geom_point(shape=21, size=5) +

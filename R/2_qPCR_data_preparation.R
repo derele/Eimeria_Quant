@@ -439,8 +439,7 @@ data.spk.lm%>%
 #dev.off()
 
 ##Model 13: Genome copies/ng gDNA modeled by Oocyst count, cycler and parasite as predictors
-lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count), data = subset(data.spk.lm, Task== "Unknown"))
-
+#lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count), data = subset(data.spk.lm, Task== "Unknown"))
 
 ######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
