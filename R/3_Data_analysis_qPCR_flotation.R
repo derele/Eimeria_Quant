@@ -13,19 +13,6 @@ if(!exists("data.inf.exp")){
     source("R/2_qPCR_data_preparation.R")
 }
 
-##Merging Infection experiment oocyst and weight loss data with qPCR data
-##Check differences between two dataframes
-setdiff(sample.data$labels, data.inf.exp$labels)
-
-##Samples MTU, FJL, EHM, DRT, CEY were not taken 
-##Sample CPY was taken but not extracted (Faeces not found in boxes)
-##Sample FLM was collected and extracted but not processed for qPCR (DNA not found)
-##We end with 235 samples out of the original 242
-
-###Join all the data in the same dataframe
-sdt<- inner_join(sample.data, data.inf.exp, by="labels") ## Add qPCR data
-###Tiny adjustment  
-sdt$dpi<- as.factor(sdt$dpi)
 
 ###Let's start plotting and analysing the data!
 ### 1) Correlation among Eimeria quantification methods
