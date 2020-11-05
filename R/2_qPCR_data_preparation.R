@@ -474,5 +474,26 @@ data.inf.exp%>%
     ##Get unique labels from qPCR data
     distinct(labels, .keep_all = TRUE)-> data.inf.exp
 
+##Merging Infection experiment oocyst and weight loss data with qPCR data
+##Check differences between two dataframes
+setdiff(sample.data$labels, data.inf.exp$labels)
+
+##Samples MTU, FJL, EHM, DRT, CEY were not taken 
+##Sample CPY was taken but not extracted (Faeces not found in boxes)
+##Sample FLM was collected and extracted but not processed for qPCR (DNA not found)
+##We end with 235 samples out of the original 242
+
+###Join all the data in the same dataframe
+sdt<- inner_join(sample.data, data.inf.exp, by="labels") ## Add qPCR data
+###Tiny adjustment  
+sdt$dpi<- as.factor(sdt$dpi)
+
+sdt%>%
+  dplyr::mutate(Genome_copies_ngDNA= Genome_copies_mean/50, ## copies by ng of fecal DNA considering 1uL from 50 ng/uL DNA
+                DNA_sample= Conc_DNA*30, ## Estimate total gDNA of sample
+                DNA_g_feces= DNA_sample/fecweight_DNA,
+                ## Transform it to ng fecal DNA by g of faeces
+                Genome_copies_gFaeces= Genome_copies_ngDNA*DNA_g_feces) -> sdt ## Estimate genome copies by g of faeces
+                 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
 rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)
