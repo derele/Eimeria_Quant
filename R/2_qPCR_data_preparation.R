@@ -470,7 +470,9 @@ data.inf.exp<- inner_join(data.inf.exp, Sum.inf, by= "labels")
 data.inf.exp%>%
     select(labels, Genome_copies_mean, Infection)%>%
     filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
-    dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))-> data.inf.exp
+    dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))%>%
+    ##Get unique labels from qPCR data
+    distinct(labels, .keep_all = TRUE)-> data.inf.exp
 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
 rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)

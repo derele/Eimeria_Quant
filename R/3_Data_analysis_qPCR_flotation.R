@@ -13,19 +13,13 @@ if(!exists("data.inf.exp")){
     source("R/2_qPCR_data_preparation.R")
 }
 
-## This is wild! does this data now come from a file or from scirpt "2_" ????
-## if(!exists("data.inf.exp")){
-##   data.inf.exp<- read.csv(file="/Victors_playground/Eimeria_microbiome/qPCR/sample_data_qPCR.csv")
-## }
-
-### as the above file does not exist I'm assuming the first?!!
-
+##Merging Infection experiment oocyst and weight loss data with qPCR data
+##Check differences between two dataframes
 setdiff(sample.data$labels, data.inf.exp$labels)
 
-##Get unique labels from qPCR data
-data.inf.exp%>%
-  dplyr::select(labels, Genome_copies_mean,Tm_mean, Infection)%>%
-  distinct(labels, .keep_all = TRUE)-> data.inf.exp
+##Samples MTU, FJL, EHM, DRT, CEY were not taken 
+##Sample CPY was taken but not extracted (Faeces not found in boxes)
+##Sample FLM was collected and extracted but not processed for qPCR (DNA not found)
 
 ### Join all the data in the same dataframe 
 sdt<- inner_join(sample.data, data.inf.exp, by="labels") ## Add qPCR data
