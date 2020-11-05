@@ -493,6 +493,9 @@ sdt%>%
                 DNA_g_feces= DNA_sample/fecweight_DNA,
                 ## Transform it to ng fecal DNA by g of faeces
                 Genome_copies_gFaeces= Genome_copies_ngDNA*DNA_g_feces) -> sdt ## Estimate genome copies by g of faeces
-                 
+
+##Transform to zero OPGs for DPI 1 and 2 
+sdt$OPG[sdt$dpi==1] <- 0
+sdt$OPG[sdt$dpi==2] <- 0                 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
 rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)
