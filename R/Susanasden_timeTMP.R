@@ -104,6 +104,15 @@ coeftest(myweigh_plm, vcov. = vcovHC, type = "HC1")
 
 ### non parametric analysis of longitudinal data in factorial experiments
 ### Brunner et al. 2002
+# LD-F1 design fers to the experimental design with one sub-plot factor
+#(longitudinal data forone homogeneous group of subjects).
+#1 hypothesis: no time effect
+
+ex.f1 <- ld.f1(y=mytab$weightloss, time=mytab$dpi, subject=mytab$EH_ID, time.order=c(0,1,2,3,4,5,6,7,8,9,10))
+
+summary(ex.f1)
+plot(ex.f1)
+print(ex.f1)
 
 
 
@@ -133,16 +142,46 @@ for (i in 1:nrow(mytab)){
 ##########################################
 #########################################
 ######### Question 3: Are DNA and Oocyst correlated?
-
+# spearman correlation
 cor.test(mytab$OPG, mytab$Genome_copies_mean, method="spearman")
 
-plot(log10(1+ mytab$Genome_copies_mean), log(mytab$OPG))
+summary(mytab$Genome_copies_mean)
 
-lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
-               data=mytab)
+# time demeaned data
 
-summary(myweigh_lmft)
+mytab_td <- with(mytab, data.frame(weightloss=weightloss- ave(weightloss, dpi),
+                                         Genome_copies_mean=Genome_copies_mean-ave(Genome_copies_mean, dpi, FUN=function(x) mean(x, na.rm=T)),
+                                         OPG=OPG-ave(OPG, dpi, FUN=function(x) mean(x, na.rm=T))))
 
+ggplot(mytab_td, aes(x=Genome_copies_mean)) + geom_histogram()
+ggplot(mytab_td, aes(x=OPG)) + geom_histogram()
+
+# estimate the regression
+summary(lm(OPG~Genome_copies_mean - 1, data=mytab_td))
+
+cor.test(mytab_td$OPG, mytab_td$Genome_copies_mean, method = "spearman")
+
+corr <- ggplot(mytab, aes(x= log(1+Genome_copies_mean), y= log(1+OPG))) +
+    geom_point(aes(colour=factor(dpi)), size = 2, alpha=0.8)+
+    xlab("qpcr DNA, log(+ 1)") +
+    ylab("Oocysts, log(+ 1)") +
+    theme_classic()
+
+corr_t <- ggplot(mytab_td, aes(x= log(max(Genome_copies_mean, na.rm=T) + Genome_copies_mean), y= log(max(OPG) + OPG))) +
+    geom_point(size = 2, alpha=0.8)+
+    xlab("qpcr DNA, log(+ max)") +
+    ylab("Oocysts, log(+ max)") +
+    theme_classic()
+
+corr_t
+
+jpeg("fig/Figure_cor.jpeg",
+     width = 6, height = 5, units = "in", pointsize = 10,
+     res = 500)
+ggarrange(corr, corr_t, labels = c("a", "b"))
+dev.off()
+
+library(ggpubr)
 
 # granger causality
 # hypothesis: DNA does not cause OPG for all individuals
