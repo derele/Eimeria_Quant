@@ -490,7 +490,7 @@ setdiff(sample.data$labels, data.inf.exp$labels)
 ##We end with 235 samples out of the original 242
 
 ###Join all the data in the same dataframe
-sdt<- inner_join(sample.data, data.inf.exp, by="labels") ## Add qPCR data
+sdt<- left_join(sample.data, data.inf.exp, by="labels") ## Add qPCR data
 ###Tiny adjustment  
 sdt$dpi<- as.factor(sdt$dpi)
 
