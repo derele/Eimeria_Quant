@@ -135,7 +135,7 @@ sdt%>%
   dplyr::arrange(dpi)%>%
   ggplot(aes(as.numeric(as.character(dpi)), Genome_copies_gFaeces, colour= EH_ID))+
   xlab("Day post infection")+
-  scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
+  scale_y_log10("log10 Genome copies/g Faeces (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   scale_x_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9,10))+
@@ -153,7 +153,7 @@ sdt%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
   ggplot(aes(x= dpi, y= Genome_copies_gFaeces))+
-  scale_y_log10("log10 Genome copies/µL gDNA (qPCR)", 
+  scale_y_log10("log10 Genome copies/g Faeces (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_boxplot(aes(color= dpi))+
@@ -165,9 +165,10 @@ sdt%>%
   theme_bw()+
   theme(text = element_text(size=16))+
   annotation_logticks(sides = "l")+
-  #stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = TRUE, na.rm = TRUE)+
-  stat_compare_means(method =  "anova")
+  stat_compare_means(label= "p.signif", method = "t.test", ref.group = "0", paired = F, na.rm = TRUE)+
+  stat_compare_means(method =  "anova", label.y = 10.5, label.x = 2)
 
+##Significant mean difference from day 3 and on... Basically DPI 0, 1 and 2 DNA measurments are the same!
 ##Weight loss 
 sdt%>%
   ggplot(aes(dpi, weightloss))+
