@@ -13,11 +13,15 @@
 ### Q3: Is a combination of the two measurements helpful?
 # Q3a: to predict at which time of an infection we are (imagine we don’t know)
 # Q3b: to predict health effect
-#  -----------------
+#  -----------------  
 
 ## We should be in the main project folder "Eimeria_Quant"
 getwd()
-#setwd("../")
+# setwd("../")
+
+# color blind palette: https://i.stack.imgur.com/zX6EV.png 
+colorBlindPal =  c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                   "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 ## Import data by sourcing previous codes
 source("R/1_Data_preparation.R")
@@ -26,25 +30,8 @@ source("R/3_Data_analysis_qPCR_flotation.R") # 17 oct 2020 -> error
 # sdt contains our data
 # sdt$weightloss is in % or original weight
 #  -----------------
-
-# bits for Victor to check in Data preparation:
-par(mfrow = c(4,6))
-for (i in 1:22) {
-d <- sdt[sdt$EH_ID %in% unique(sdt$EH_ID)[i], ]
-plot(as.numeric(as.character(d$dpi)), d$OPG)
-}
-ggplot(sdt, aes(x=dpi, y=OPG)) + geom_point() + geom_line(aes(group=EH_ID))
-table(sdt$EH_ID, sdt$dpi)
-## Data Article2 Alice
-dataAl <- read.csv("../Article_RelatedParasitesResTol/data/ExpeDF_005_Alice.csv")
-dataAl[dataAl$EH_ID %in% "LM0226", c("dpi", "OPG")]
-sdt[sdt$EH_ID %in% "LM0226", c("dpi", "OPG")]
-  # NB: how to have data for all days... We cannot compare
-#  -----------------
-
 # TEMPORARY Load backed-up data 
-sdt <- read.csv("temp/sdt_bak.csv")
-  ## Still an error, 228 only
+sdt <- read.csv("tmp/temporarydataset.csv")
 
 ### Q1: Is the DNA coming from the counted oocyst?
 # Q1a: Correlation of the two
@@ -53,11 +40,236 @@ ggplot(sdt, aes(x=dpi, y=Genome_copies_mean)) + geom_point() + geom_line(aes(gro
 ggplot(sdt, aes(x=dpi, y=weightloss)) + geom_point() + geom_line(aes(group=EH_ID))
 
 ggplot(sdt, aes(x=OPG, y=Genome_copies_mean)) + geom_point()
-cor(sdt$OPG, sdt$Genome_copies_mean, use = "complete.obs", method = "pearson")
-# no direct obvious correlation
+cor.test(sdt$OPG, sdt$Genome_copies_mean, use = "complete.obs", method = "spearman")
+
+# Granger causality: DROPPED. For details, see "Appendix" part at the end of the code
+
+# ----------------------------
+# Q2b: Does DNA predict a health effect on the host “overall” (e.g. maximum)?
+# ----------------------------
+
+# Tips from stats meeting 14 oct 2020: # fit within individual, extract metric
+# extract summary statistics, meaningful, then relate that to maxWL
+# Cons: neglect the uncertainty; Pros:simple and biologically meaningful
+
+# Use growthcurver package to fit individual logistic regression curve and extract summary stats
+#https://cran.r-project.org/web/packages/growthcurver/vignettes/Growthcurver-vignette.html
+library(growthcurver)
+sdt$dpi = as.numeric(as.character(sdt$dpi))
+### DPI AS NUMERIC!!
+
+# 1. Calculate maximum value & at which dpi it happens
+# 1.1 OPG
+datMaxOPG = sdt %>% group_by(EH_ID) %>%
+  filter(OPG == max(OPG, na.rm = T)) %>%
+  select(EH_ID, dpi, OPG)%>% data.frame()
+table(datMaxOPG$dpi)
+
+# 1.2 fecal DNA
+datMaxDNA = sdt %>% group_by(EH_ID) %>%
+  filter(Genome_copies_mean == max(Genome_copies_mean, na.rm = T)) %>%
+  select(EH_ID, dpi, Genome_copies_mean)%>% data.frame()
+table(datMaxDNA$dpi)
+
+# 1.3 relative weight loss
+datMaxWL = sdt %>% group_by(EH_ID) %>%
+  filter(weightloss == max(weightloss, na.rm = T)) %>%
+  select(EH_ID, dpi, weightloss)%>% data.frame()
+table(datMaxWL$dpi)
+
+# plot overview
+p1 = ggplot(sdt, aes(x= dpi, y = Genome_copies_mean)) + theme_bw() +
+  geom_line() + 
+  facet_grid(.~EH_ID)
+p2 = ggplot(sdt, aes(x= dpi, y = OPG)) + theme_bw() +
+  geom_line() + 
+  facet_grid(.~EH_ID)
+p3 = ggplot(sdt, aes(x= dpi, y = weightloss)) + theme_bw() +
+  geom_line() +
+  facet_grid(.~EH_ID)
+grid.arrange(p1, p2, p3, nrow = 3)
+
+# 2. Shape input data for Growthcurver:
+
+# 2.1. OPG: peak at dpi 6, 7
+subDF_OPG = sdt[c("OPG", "dpi",  "EH_ID")]
+# replace NA at dpi 1 & 2 by 0 as dpi 3 is always 0
+subDF_OPG[is.na(subDF_OPG)] = 0
+# for growthcurer
+names(subDF_OPG)[names(subDF_OPG) %in% "dpi"] = "time"
+subDF_OPG = subDF_OPG[order(subDF_OPG$time),]
+# split in 2 df for individuals with peak at dpi6 or dpi7:
+subDF_OPG_6 = subDF_OPG[subDF_OPG$EH_ID %in% datMaxOPG$EH_ID[datMaxOPG$dpi %in% 6],]
+subDF_OPG_7 = subDF_OPG[subDF_OPG$EH_ID %in% datMaxOPG$EH_ID[datMaxOPG$dpi %in% 7],]
+# long to wide format
+wideDF_OPG_6 = data.frame(pivot_wider(subDF_OPG_6, names_from = EH_ID, values_from = OPG) )
+wideDF_OPG_6 = wideDF_OPG_6[wideDF_OPG_6$time %in% 0:6,]
+wideDF_OPG_7 = data.frame(pivot_wider(subDF_OPG_7, names_from = EH_ID, values_from = OPG) )
+wideDF_OPG_7 = wideDF_OPG_7[wideDF_OPG_7$time %in% 0:7,]
+
+# 2.2. Fecal DNA: peak at dpi 4, 5, 6
+subDF_DNA = sdt[c("Genome_copies_mean", "dpi",  "EH_ID")]
+## Do NOT replace NAs
+# for growthcurer
+names(subDF_DNA)[names(subDF_DNA) %in% "dpi"] = "time"
+subDF_DNA = subDF_DNA[order(subDF_DNA$time),]
+# split in 3 df for individuals with peak at dpi4, 5 or 6:
+subDF_DNA_4 = subDF_DNA[subDF_DNA$EH_ID %in% datMaxDNA$EH_ID[datMaxDNA$dpi %in% 4],]
+subDF_DNA_5 = subDF_DNA[subDF_DNA$EH_ID %in% datMaxDNA$EH_ID[datMaxDNA$dpi %in% 5],]
+subDF_DNA_6 = subDF_DNA[subDF_DNA$EH_ID %in% datMaxDNA$EH_ID[datMaxDNA$dpi %in% 6],]
+# long to wide format
+wideDF_DNA_4 = data.frame(pivot_wider(subDF_DNA_4, names_from = EH_ID, values_from = Genome_copies_mean) )
+wideDF_DNA_4 = wideDF_DNA_4[wideDF_DNA_4$time %in% 0:4,]
+wideDF_DNA_5 = data.frame(pivot_wider(subDF_DNA_5, names_from = EH_ID, values_from = Genome_copies_mean) )
+wideDF_DNA_5 = wideDF_DNA_5[wideDF_DNA_5$time %in% 0:5,]
+wideDF_DNA_6 = data.frame(pivot_wider(subDF_DNA_6, names_from = EH_ID, values_from = Genome_copies_mean) )
+wideDF_DNA_6 = wideDF_DNA_6[wideDF_DNA_6$time %in% 0:6,]
+## correct manual error
+wideDF_DNA_6$LM0207[1] = 0
+
+# 3. Fit growthcurver logistic regression
+gc_fit_OPG6 <- SummarizeGrowthByPlate(wideDF_OPG_6, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_OPG6.pdf")
+gc_fit_OPG6 # LM0206 and LM0214: no fit, just one value at peak
+gc_fit_OPG7 <- SummarizeGrowthByPlate(wideDF_OPG_7, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_OPG7.pdf")
+gc_fit_OPG7 # LM0218: no fit, 0s then 3 really close values until peak
+
+gc_fit_DNA4 <- SummarizeGrowthByPlate(wideDF_DNA_4, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_DNA4.pdf")
+gc_fit_DNA4 # cannot fit
+gc_fit_DNA5 <- SummarizeGrowthByPlate(wideDF_DNA_5)
+gc_fit_DNA5 # 9 fail
+failed = gc_fit_DNA5$sample[gc_fit_DNA5$note %in% "cannot fit data"]
+wideDF_DNA_5_nofail = data.frame(
+  pivot_wider(subDF_DNA_5[!subDF_DNA_5$EH_ID %in% failed,], 
+              names_from = EH_ID, values_from = Genome_copies_mean) )
+wideDF_DNA_5_nofail = wideDF_DNA_5_nofail[wideDF_DNA_5_nofail$time %in% 0:5,]
+gc_fit_DNA5_notfail <- SummarizeGrowthByPlate(wideDF_DNA_5_nofail, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_DNA5.pdf")
+gc_fit_DNA5_notfail
+gc_fit_DNA6 <- SummarizeGrowthByPlate(wideDF_DNA_6, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_DNA6.pdf")
+gc_fit_DNA6 # cannot fit
+
+# Here, the population size at the beginning of the growth curve is given by N0. 
+# The maximum possible population size in a particular environment, 
+# or the carrying capacity, is given by K. The intrinsic growth rate 
+# of the population, r, is the growth rate that would occur if there were no 
+# restrictions imposed on total population size. Growthcurver finds the best
+# values of K, r, and N0 for the growth curve data.
+
+
+
+
+
+
+
+# plot OPG & WL & DNA $ WL
+
+  
+require(gridExtra)
+p1 = ggplot(sdt, aes(x = dpi, y = OPG)) + 
+  geom_line(aes(group = EH_ID), color = colorBlindPal[1])+
+  theme_bw()
+p2 = ggplot(sdt, aes(x = dpi, y = Genome_copies_mean)) + 
+  geom_line(aes(group = EH_ID), color = colorBlindPal[2])+
+  theme_bw()
+p3 = ggplot(sdt, aes(x = dpi, y = weightloss)) + 
+  geom_line(aes(group = EH_ID), color = colorBlindPal[3])+
+  theme_bw()
+grid.arrange(p1, p2, p3, nrow=3)
+
+## Extract metrics:
+# what is the peak day?
+# what is the peak value?
+# for both OPG & DNA: what is the shedding time length? (try later)
+sdt$dpi = as.numeric(as.character(sdt$dpi))
+### DPI AS NUMERIC!!
+datMaxOPG = sdt %>% group_by(EH_ID) %>%
+  filter(OPG == max(OPG, na.rm = T)) %>%
+  select(EH_ID, dpi, OPG)%>% data.frame()
+names(datMaxOPG)[names(datMaxOPG) %in% "dpi"] = "dpi_maxOPG"
+ggplot(datMaxOPG, aes(dpi_maxOPG, OPG)) +
+  geom_point(pch= 21, size =4) + theme_bw()
+
+datMaxDNA = sdt %>% group_by(EH_ID) %>%
+  filter(Genome_copies_mean == max(Genome_copies_mean, na.rm = T)) %>%
+  select(EH_ID, dpi, Genome_copies_mean)%>% data.frame()
+names(datMaxDNA)[names(datMaxDNA) %in% "dpi"] = "dpi_maxDNA"
+ggplot(datMaxDNA, aes(dpi_maxDNA, Genome_copies_mean)) +
+  geom_point(pch= 21, size =4) + theme_bw()
+
+datMaxWL = sdt %>% group_by(EH_ID) %>%
+  filter(weightloss == max(weightloss, na.rm = T)) %>%
+  select(EH_ID, dpi, weightloss)%>% data.frame()
+names(datMaxWL)[names(datMaxWL) %in% "dpi"] = "dpi_maxWL"
+ggplot(datMaxWL, aes(dpi_maxWL, weightloss)) +
+  geom_point(pch= 21, size =4) + theme_bw()
+
+datMaxALL = merge(merge(datMaxOPG, datMaxDNA), datMaxWL)
+
+# How do they correlate?
+## time:
+cor(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxDNA, method = "spearman")
+ggplot(datMaxALL, aes(x = dpi_maxOPG, y = dpi_maxDNA)) +
+  geom_point() + theme_bw()
+
+cor(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxWL, method = "spearman")
+ggplot(datMaxALL, aes(x = dpi_maxOPG, y = dpi_maxWL)) +
+  geom_point() + theme_bw()
+
+cor(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL, method = "spearman")
+ggplot(datMaxALL, aes(x = dpi_maxDNA, y = dpi_maxWL)) +
+  geom_point() + theme_bw()
+
+## values:
+cor(datMaxALL$OPG, datMaxALL$Genome_copies_mean, method = "spearman")
+ggplot(datMaxALL, aes(x = OPG, y = Genome_copies_mean)) +
+  geom_point() + theme_bw()
+
+cor(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
+ggplot(datMaxALL, aes(x = OPG, y = weightloss)) +
+  geom_point() + theme_bw()
+
+cor(datMaxALL$Genome_copies_mean, datMaxALL$weightloss, method = "spearman")
+ggplot(datMaxALL, aes(x = Genome_copies_mean, y = weightloss)) +
+  geom_point() + theme_bw()
+
+# Model the infections and extract the peak predicted value per individual. Then correlate.
+# http://rstudio-pubs-static.s3.amazonaws.com/270755_b6a3cb371b0b446891deba7aa7fa55f2.html
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(growthcurver)
+library(purrr)
+install.packages("Growthcurver")
+
+# A simple method for distinguishing within- versus between-subjecteffects using 
+# mixed modelsMartijn van de Pol*, Jonathan Wright
+
+# https://royalsocietypublishing.org/doi/10.1098/rspb.2015.2151?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
+# about trajectory analyses; very similar data to us
+# Even a bit less because they had to measure within a mouse and had to use glowing bacteria.
+# In terms of tolerance and resistance we might have more... DNA (intensity) and the actual surviving (tolerated) parasites
+# the trajectories could help for the question 3 (later on...)
+# Would you span the trajectories into 3 dimensinal space between oocysts, DNA and WL?
+# yes probably, that would be very interesting to see i the trajectories correlate
+# The article is well cited... especially now, five years after it appeared.
+# I wonder how the hamming distance between the two dimensional vectors are interpreted... have to read on...
+# The problem is (AND WHY THIS WON'T WORK), that the directions seem to be different on each day... the mouse could (lose weight&become more infected), (lose weight&become less infected), (gain weight&become more infected) or (gain weight & become less infected), or die
+# This changes relatively freely in their model.
+# I guess it's an up and down of both variables over the time of infection...
+# In ours it would be boring as we have this clear peak dynamic.... the relative height of peak  is more important then differences in the trajectory in our case!
+# I think our trajectories will likely be quite uniform (all mice first gain DNA, gain oocysts, lose weight, then all lose DNA, lose oocysts, gain weight).
+# The question would be more HOW MUCH? and whether differences in the how much influence each other (or rather oocysts and/or/combined with DNA influence WL) (edited) 
+# The ups and downs create trajectories in "tolerance resistance space"... those can be different in these bacteria. I don't think they will be very different in our model. I think what we are after is quantitative differences between qualitatively similar trajectories.
+# Oh but it applies just for TS data
+# Yep maybe it's indeed not applicable to our question. I will have a closer look when my head won't hurt ^^
+# It's also only a short TS but it's more TS like in that it has less of a phasing structure than our problem.
+# with phasing I mean clear UP DOWN pattern as in our data.
+
+
+# -----------------------------
+# APPENDIX
+# -----------------------------
 
 # Granger causality
-
 # https://towardsdatascience.com/fun-with-arma-var-and-granger-causality-6fdd29d8391c
 # test autocorrelation
 inds = unique(sdt$EH_ID)
@@ -112,8 +324,6 @@ for (i in inds){
 }
 ## rejection of stationary TS in 7/22
 
-
-
 # https://en.wikipedia.org/wiki/Granger_causality
 # Better terms: "precedence", or, as Granger himself later claimed in 1977, "temporally related".
 # Rather than testing whether Y causes X, the Granger causality tests whether Y forecasts X.
@@ -141,37 +351,3 @@ pgrangertest(OPG~Genome_copies_mean, data=sdt, index=c("EH_ID", "dpi"))
 # data:  OPG ~ Genome_copies_mean                                                                                                                                                                           
 # Ztilde = 93.114, p-value < 2.2e-16                                                                                                                                                                        
 # alternative hypothesis: Granger causality for at least one individual 
-
-# ----------------------------
-# Q2b: Does DNA predict a health effect on the host “overall” (e.g. maximum)?
-# ----------------------------
-
-# Tips from stats meeting 14 oct 2020
-# fit within individual, extract metric
-# extract summary statistics, meaningful, then relate that to maxWL
-# Cons: neglect the uncertainty; Pros:simple and biologically meaningful
-# -> cf 
-
-# A simple method for distinguishing within- versus between-subjecteffects using 
-# mixed modelsMartijn van de Pol*, Jonathan Wright
-
-# https://royalsocietypublishing.org/doi/10.1098/rspb.2015.2151?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
-# about trajectory analyses; very similar data to us
-# Even a bit less because they had to measure within a mouse and had to use glowing bacteria.
-# In terms of tolerance and resistance we might have more... DNA (intensity) and the actual surviving (tolerated) parasites
-# the trajectories could help for the question 3 (later on...)
-# Would you span the trajectories into 3 dimensinal space between oocysts, DNA and WL?
-# yes probably, that would be very interesting to see i the trajectories correlate
-# The article is well cited... especially now, five years after it appeared.
-# I wonder how the hamming distance between the two dimensional vectors are interpreted... have to read on...
-# The problem is (AND WHY THIS WON'T WORK), that the directions seem to be different on each day... the mouse could (lose weight&become more infected), (lose weight&become less infected), (gain weight&become more infected) or (gain weight & become less infected), or die
-# This changes relatively freely in their model.
-# I guess it's an up and down of both variables over the time of infection...
-# In ours it would be boring as we have this clear peak dynamic.... the relative height of peak  is more important then differences in the trajectory in our case!
-# I think our trajectories will likely be quite uniform (all mice first gain DNA, gain oocysts, lose weight, then all lose DNA, lose oocysts, gain weight).
-# The question would be more HOW MUCH? and whether differences in the how much influence each other (or rather oocysts and/or/combined with DNA influence WL) (edited) 
-# The ups and downs create trajectories in "tolerance resistance space"... those can be different in these bacteria. I don't think they will be very different in our model. I think what we are after is quantitative differences between qualitatively similar trajectories.
-# Oh but it applies just for TS data
-# Yep maybe it's indeed not applicable to our question. I will have a closer look when my head won't hurt ^^
-# It's also only a short TS but it's more TS like in that it has less of a phasing structure than our problem.
-# with phasing I mean clear UP DOWN pattern as in our data.
