@@ -154,82 +154,65 @@ gc_fit_DNA6 # cannot fit
 # restrictions imposed on total population size. Growthcurver finds the best
 # values of K, r, and N0 for the growth curve data.
 
+## After observing the curves, I am not sure it is really meaningful,
+# applicable to oocysts & DNA. To be discussed.
 
-
-
-
-
-
-# plot OPG & WL & DNA $ WL
-
-  
-require(gridExtra)
-p1 = ggplot(sdt, aes(x = dpi, y = OPG)) + 
-  geom_line(aes(group = EH_ID), color = colorBlindPal[1])+
-  theme_bw()
-p2 = ggplot(sdt, aes(x = dpi, y = Genome_copies_mean)) + 
-  geom_line(aes(group = EH_ID), color = colorBlindPal[2])+
-  theme_bw()
-p3 = ggplot(sdt, aes(x = dpi, y = weightloss)) + 
-  geom_line(aes(group = EH_ID), color = colorBlindPal[3])+
-  theme_bw()
-grid.arrange(p1, p2, p3, nrow=3)
-
-## Extract metrics:
+###### Option 2: Extract metrics:
 # what is the peak day?
 # what is the peak value?
-# for both OPG & DNA: what is the shedding time length? (try later)
 sdt$dpi = as.numeric(as.character(sdt$dpi))
 ### DPI AS NUMERIC!!
 datMaxOPG = sdt %>% group_by(EH_ID) %>%
   filter(OPG == max(OPG, na.rm = T)) %>%
   select(EH_ID, dpi, OPG)%>% data.frame()
 names(datMaxOPG)[names(datMaxOPG) %in% "dpi"] = "dpi_maxOPG"
-ggplot(datMaxOPG, aes(dpi_maxOPG, OPG)) +
-  geom_point(pch= 21, size =4) + theme_bw()
 
 datMaxDNA = sdt %>% group_by(EH_ID) %>%
   filter(Genome_copies_mean == max(Genome_copies_mean, na.rm = T)) %>%
   select(EH_ID, dpi, Genome_copies_mean)%>% data.frame()
 names(datMaxDNA)[names(datMaxDNA) %in% "dpi"] = "dpi_maxDNA"
-ggplot(datMaxDNA, aes(dpi_maxDNA, Genome_copies_mean)) +
-  geom_point(pch= 21, size =4) + theme_bw()
 
 datMaxWL = sdt %>% group_by(EH_ID) %>%
   filter(weightloss == max(weightloss, na.rm = T)) %>%
   select(EH_ID, dpi, weightloss)%>% data.frame()
 names(datMaxWL)[names(datMaxWL) %in% "dpi"] = "dpi_maxWL"
-ggplot(datMaxWL, aes(dpi_maxWL, weightloss)) +
-  geom_point(pch= 21, size =4) + theme_bw()
 
 datMaxALL = merge(merge(datMaxOPG, datMaxDNA), datMaxWL)
 
 # How do they correlate?
 ## time:
-cor(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxDNA, method = "spearman")
-ggplot(datMaxALL, aes(x = dpi_maxOPG, y = dpi_maxDNA)) +
-  geom_point() + theme_bw()
+table(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxDNA)
+chisq.test(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxDNA) # nope
 
-cor(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxWL, method = "spearman")
-ggplot(datMaxALL, aes(x = dpi_maxOPG, y = dpi_maxWL)) +
-  geom_point() + theme_bw()
+table(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxWL)
+chisq.test(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxWL) # nope
 
-cor(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL, method = "spearman")
-ggplot(datMaxALL, aes(x = dpi_maxDNA, y = dpi_maxWL)) +
-  geom_point() + theme_bw()
+table(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL)
+chisq.test(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL) # nope
 
-## values:
-cor(datMaxALL$OPG, datMaxALL$Genome_copies_mean, method = "spearman")
+# values:
+cor.test(datMaxALL$OPG, datMaxALL$Genome_copies_mean, method = "spearman")
 ggplot(datMaxALL, aes(x = OPG, y = Genome_copies_mean)) +
   geom_point() + theme_bw()
 
-cor(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
+cor.test(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
 ggplot(datMaxALL, aes(x = OPG, y = weightloss)) +
   geom_point() + theme_bw()
 
-cor(datMaxALL$Genome_copies_mean, datMaxALL$weightloss, method = "spearman")
+cor.test(datMaxALL$Genome_copies_mean, datMaxALL$weightloss, method = "spearman")
 ggplot(datMaxALL, aes(x = Genome_copies_mean, y = weightloss)) +
   geom_point() + theme_bw()
+
+# Can we predict weight loss by a combination of OPG and fecDNA?
+library(lmtest)
+modFull = lm(weightloss ~ OPG * Genome_copies_mean, data = datMaxALL)
+modminusOPG = lm(weightloss ~ Genome_copies_mean, data = datMaxALL)
+modminusDNA = lm(weightloss ~ OPG, data = datMaxALL)
+modminusInter = lm(weightloss ~ OPG + Genome_copies_mean, data = datMaxALL)
+list(signifOG = lrtest(modFull, modminusOPG),
+     signifDNA = lrtest(modFull, modminusDNA),
+     signifInter = lrtest(modFull, modminusInter))
+
 
 # Model the infections and extract the peak predicted value per individual. Then correlate.
 # http://rstudio-pubs-static.s3.amazonaws.com/270755_b6a3cb371b0b446891deba7aa7fa55f2.html
