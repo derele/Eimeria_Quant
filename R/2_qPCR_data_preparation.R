@@ -151,22 +151,26 @@ compareLM(lm.CtAll, lm.CtPar, lm.CtCyc, lm.Ct, lm.CtInt)
 ##Genome copies modeled by Ct and extra predictors to be considered 
 ##Model 6: Genome copies modeled by Ct simple without other predictor
 ##considering all data 
-lm.SC<- lm(log10(Genome_copies)~Ct, data.std.lm)
+lm.SC<- lm(log10(Genome_copies)~Ct, data.std.lm, na.action = na.exclude)
 
 ##Model 7: Genome copies modeled by Ct and parasite as predictors
-lm.SCPar<- lm(log10(Genome_copies)~Ct+Parasite, data.std.lm)
+lm.SCPar<- lm(log10(Genome_copies)~Ct+Parasite, data.std.lm, na.action = na.exclude)
 
 ##Model 8: Genome copies modeled by Ct and cycler as predictors
-lm.SCCyc<- lm(log10(Genome_copies)~Ct+Cycler, data.std.lm)
+lm.SCCyc<- lm(log10(Genome_copies)~Ct+Cycler, data.std.lm, na.action = na.exclude)
 
 ##Model 9: Genome copies modeled by Ct, parasite and cycler used as predictors
-lm.SCAll<- lm(log10(Genome_copies)~Ct+Parasite+Cycler, data.std.lm)
+lm.SCAll<- lm(log10(Genome_copies)~Ct+Parasite+Cycler, data.std.lm, na.action = na.exclude)
 
 ##Model 10: Genome copies modeled by Ct and parasite/cycle interaction (Check with Alice and Susi)
-lm.SCInt<- lm(log10(Genome_copies)~Ct+Parasite*Cycler, data.std.lm)
+lm.SCInt<- lm(log10(Genome_copies)~Ct+Parasite*Cycler, data.std.lm, na.action = na.exclude)
 
 ##Comparison of models 
 compareLM(lm.SC, lm.SCPar, lm.SCCyc, lm.SCAll, lm.SCInt)
+anova(lm.SC, lm.SCCyc) ##Significantly different from simplest model  
+anova(lm.SC, lm.SCAll) ##Significantly different from simplest model
+anova(lm.SCInt, lm.SCAll) ##No difference 
+anova(lm.SCCyc, lm.SCAll) ##No difference but Model with just Cycler has higher R.sq
 
 ##Model 8 fit better the data... Cycler has major impact (again confirm expectations)!
 ##Linear model (Standard curve for the rest of experiments)
@@ -332,10 +336,13 @@ data.unk.lm%>%
   annotation_logticks(sides = "bl")-> C
 
 ##Model 12: Intersample variation considering Parasite, strain, cycler and sporulation rate as predictors
-lm.ISV<- lm(formula = log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Parasite+Strain+Cycler+Sporulation_rate, data = data.unk.lm)
-
+lm.ISV<- lm(formula = log10(Genome_copies_ngDNA)~log10(Oocyst_count)+
+              Parasite+Strain+Cycler+Sporulation_rate, data = data.unk.lm, na.action = na.exclude)
+summary(lm.ISV)
+##Main effect from Oocyst count and small effect from Sporulation rate
 ##Compair model 11 (perfect fit) vs model 12 
-##compareLM(lm.SCOoc, lm.ISV)
+compareLM(lm.SCOoc, lm.ISV)
+
 ##Predict genome copies from oocyst count and compair against previous prediction (Not finished, check!)
 ##data.unk.lm$Genome_copies_ng_pred<- 10^predict(lm.ISV, data.unk.lm)
 
