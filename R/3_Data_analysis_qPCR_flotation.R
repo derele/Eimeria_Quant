@@ -82,6 +82,7 @@ sdt%>%
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+
     geom_point(shape=21, size=5) +
     theme_bw()+
+  theme(text = element_text(size=16))+
   annotation_logticks()
 
 ##Weak correlation between measurments by DPI :S 
@@ -167,8 +168,29 @@ sdt%>%
   annotation_logticks(sides = "l")+
   stat_compare_means(label= "p.signif", method = "t.test", ref.group = "0", paired = F, na.rm = TRUE)+
   stat_compare_means(method =  "anova", label.y = 10.5, label.x = 2)
-
 ##Significant mean difference from day 3 and on... Basically DPI 0, 1 and 2 DNA measurments are the same!
+
+sdt%>%
+  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
+  dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces)%>%
+  dplyr::arrange(EH_ID)%>%
+  dplyr::arrange(dpi)%>% ##for comparison 
+  ggplot(aes(x= dpi, y= OPG))+
+  scale_y_log10("log10 Oocyst per g Faeces (Flotation)", 
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  geom_boxplot(aes(color= dpi))+
+  geom_point(aes(color=dpi))+
+  xlab("Day post infection")+
+  geom_line(aes(group = EH_ID), color= "gray")+
+  scale_color_brewer(palette = "Set3")+
+  labs(tag= "B)")+
+  theme_bw()+
+  theme(text = element_text(size=16))+
+  annotation_logticks(sides = "l")+
+  stat_compare_means(label= "p.signif", method = "t.test", ref.group = "4", paired = F, na.rm = TRUE)+
+  stat_compare_means(method =  "anova", label.y = 6.5, label.x = 2)
+##Significant mean difference from day 4 and on... Basically DPI 0 to 3 No OPG and DPI 4 equal to 10!
 ##Weight loss 
 sdt%>%
   ggplot(aes(dpi, weightloss))+
