@@ -17,7 +17,7 @@
 
 ## We should be in the main project folder "Eimeria_Quant"
 getwd()
-# setwd("../")
+#setwd("../")
 
 # color blind palette: https://i.stack.imgur.com/zX6EV.png 
 colorBlindPal =  c("#000000", "#E69F00", "#56B4E9", "#009E73", 
@@ -191,17 +191,17 @@ table(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL)
 chisq.test(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL) # nope
 
 # values:
-cor.test(datMaxALL$OPG, datMaxALL$Genome_copies_mean, method = "spearman")
 ggplot(datMaxALL, aes(x = OPG, y = Genome_copies_mean)) +
   geom_point() + theme_bw()
+cor.test(datMaxALL$OPG, datMaxALL$Genome_copies_mean, method = "spearman")
 
-cor.test(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
 ggplot(datMaxALL, aes(x = OPG, y = weightloss)) +
   geom_point() + theme_bw()
+cor.test(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
 
-cor.test(datMaxALL$Genome_copies_mean, datMaxALL$weightloss, method = "spearman")
 ggplot(datMaxALL, aes(x = Genome_copies_mean, y = weightloss)) +
   geom_point() + theme_bw()
+cor.test(datMaxALL$Genome_copies_mean, datMaxALL$weightloss, method = "spearman")
 
 # Can we predict weight loss by a combination of OPG and fecDNA?
 library(lmtest)
@@ -213,44 +213,34 @@ list(signifOG = lrtest(modFull, modminusOPG),
      signifDNA = lrtest(modFull, modminusDNA),
      signifInter = lrtest(modFull, modminusInter))
 
+# plots
+par(mfrow = c(2, 2))
+plot(modFull) # looks OK
+par(mfrow = c(1, 1)) 
 
-# Model the infections and extract the peak predicted value per individual. Then correlate.
-# http://rstudio-pubs-static.s3.amazonaws.com/270755_b6a3cb371b0b446891deba7aa7fa55f2.html
-library(dplyr)
-library(reshape2)
-library(ggplot2)
-library(growthcurver)
-library(purrr)
-install.packages("Growthcurver")
+# pretty residuals plot: https://drsimonj.svbtle.com/visualising-residuals
+# Select out data of interest:
+d <- datMaxALL %>% select(weightloss, OPG, Genome_copies_mean)
+# Fit the model
+fit <- lm(weightloss ~ OPG * Genome_copies_mean, data = d)
+# Obtain predicted and residual values
+d$predicted <- predict(fit)
+d$residuals <- residuals(fit)
+# plot residuals
+d %>% 
+  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
+  ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(fill = residuals), shape =21, size = 3) +  # Points of actual values
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicted)) +
+  facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
+  theme_bw()
 
-# A simple method for distinguishing within- versus between-subjecteffects using 
-# mixed modelsMartijn van de Pol*, Jonathan Wright
-
-# https://royalsocietypublishing.org/doi/10.1098/rspb.2015.2151?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
-# about trajectory analyses; very similar data to us
-# Even a bit less because they had to measure within a mouse and had to use glowing bacteria.
-# In terms of tolerance and resistance we might have more... DNA (intensity) and the actual surviving (tolerated) parasites
-# the trajectories could help for the question 3 (later on...)
-# Would you span the trajectories into 3 dimensinal space between oocysts, DNA and WL?
-# yes probably, that would be very interesting to see i the trajectories correlate
-# The article is well cited... especially now, five years after it appeared.
-# I wonder how the hamming distance between the two dimensional vectors are interpreted... have to read on...
-# The problem is (AND WHY THIS WON'T WORK), that the directions seem to be different on each day... the mouse could (lose weight&become more infected), (lose weight&become less infected), (gain weight&become more infected) or (gain weight & become less infected), or die
-# This changes relatively freely in their model.
-# I guess it's an up and down of both variables over the time of infection...
-# In ours it would be boring as we have this clear peak dynamic.... the relative height of peak  is more important then differences in the trajectory in our case!
-# I think our trajectories will likely be quite uniform (all mice first gain DNA, gain oocysts, lose weight, then all lose DNA, lose oocysts, gain weight).
-# The question would be more HOW MUCH? and whether differences in the how much influence each other (or rather oocysts and/or/combined with DNA influence WL) (edited) 
-# The ups and downs create trajectories in "tolerance resistance space"... those can be different in these bacteria. I don't think they will be very different in our model. I think what we are after is quantitative differences between qualitatively similar trajectories.
-# Oh but it applies just for TS data
-# Yep maybe it's indeed not applicable to our question. I will have a closer look when my head won't hurt ^^
-# It's also only a short TS but it's more TS like in that it has less of a phasing structure than our problem.
-# with phasing I mean clear UP DOWN pattern as in our data.
-
-
-# -----------------------------
-# APPENDIX
-# -----------------------------
+# ------------------
+# APPENDIX (Junk...)
+# ------------------
 
 # Granger causality
 # https://towardsdatascience.com/fun-with-arma-var-and-granger-causality-6fdd29d8391c
@@ -334,3 +324,29 @@ pgrangertest(OPG~Genome_copies_mean, data=sdt, index=c("EH_ID", "dpi"))
 # data:  OPG ~ Genome_copies_mean                                                                                                                                                                           
 # Ztilde = 93.114, p-value < 2.2e-16                                                                                                                                                                        
 # alternative hypothesis: Granger causality for at least one individual 
+
+
+
+# A simple method for distinguishing within- versus between-subjecteffects using 
+# mixed modelsMartijn van de Pol*, Jonathan Wright
+
+# https://royalsocietypublishing.org/doi/10.1098/rspb.2015.2151?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
+# about trajectory analyses; very similar data to us
+# Even a bit less because they had to measure within a mouse and had to use glowing bacteria.
+# In terms of tolerance and resistance we might have more... DNA (intensity) and the actual surviving (tolerated) parasites
+# the trajectories could help for the question 3 (later on...)
+# Would you span the trajectories into 3 dimensinal space between oocysts, DNA and WL?
+# yes probably, that would be very interesting to see i the trajectories correlate
+# The article is well cited... especially now, five years after it appeared.
+# I wonder how the hamming distance between the two dimensional vectors are interpreted... have to read on...
+# The problem is (AND WHY THIS WON'T WORK), that the directions seem to be different on each day... the mouse could (lose weight&become more infected), (lose weight&become less infected), (gain weight&become more infected) or (gain weight & become less infected), or die
+# This changes relatively freely in their model.
+# I guess it's an up and down of both variables over the time of infection...
+# In ours it would be boring as we have this clear peak dynamic.... the relative height of peak  is more important then differences in the trajectory in our case!
+# I think our trajectories will likely be quite uniform (all mice first gain DNA, gain oocysts, lose weight, then all lose DNA, lose oocysts, gain weight).
+# The question would be more HOW MUCH? and whether differences in the how much influence each other (or rather oocysts and/or/combined with DNA influence WL) (edited) 
+# The ups and downs create trajectories in "tolerance resistance space"... those can be different in these bacteria. I don't think they will be very different in our model. I think what we are after is quantitative differences between qualitatively similar trajectories.
+# Oh but it applies just for TS data
+# Yep maybe it's indeed not applicable to our question. I will have a closer look when my head won't hurt ^^
+# It's also only a short TS but it's more TS like in that it has less of a phasing structure than our problem.
+# with phasing I mean clear UP DOWN pattern as in our data.
