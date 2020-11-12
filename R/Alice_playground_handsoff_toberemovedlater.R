@@ -3,194 +3,88 @@
 # DNA based and classical coprological techniques provide different but
 # complementary quantification – an example from rodent Coccidia (Eimeria)
 #  -----------------
-### Q1: Is the DNA coming from the counted oocyst?
-# Q1a: Correlation of the two
-# Q1b: (How?) does this change over the time of infection
-### Q2: What are DNA measurements good for, if anything?
-# Q2a: Does DNA predict a health effect on the host (better than oocyst counts) on 
-# a daily basis?
-# Q2b: Does DNA predict a health effect on the host “overall” (e.g. maximum)?
-### Q3: Is a combination of the two measurements helpful?
-# Q3a: to predict at which time of an infection we are (imagine we don’t know)
-# Q3b: to predict health effect
-#  -----------------  
 
 ## We should be in the main project folder "Eimeria_Quant"
 getwd()
 #setwd("../")
 
 # color blind palette: https://i.stack.imgur.com/zX6EV.png 
-colorBlindPal =  c("#000000", "#E69F00", "#56B4E9", "#009E73", 
-                   "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+colorBlindPal =  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 ## Import data by sourcing previous codes
 source("R/1_Data_preparation.R")
-source("R/2_qPCR_data_preparation.R") # 17 oct 2020 -> error
-source("R/3_Data_analysis_qPCR_flotation.R") # 17 oct 2020 -> error
-# sdt contains our data
-# sdt$weightloss is in % or original weight
+source("R/2_qPCR_data_preparation.R") 
+source("R/3_Data_analysis_qPCR_flotation.R") 
+# sdt contains our data; sdt$weightloss is in % or original weight
+
 #  -----------------
-# TEMPORARY Load backed-up data 
-sdt <- read.csv("tmp/temporarydataset.csv")
+### Preparation of dataframe with all max values:
+myData = sdt
+# NB. Let's not consider which parent is which, but make A_B mouse = B_A mouse
+# we don't have enough individuals to test this effect, and we are not interested in it anyway!
+x <- strsplit(myData$Strain, "_")
+y <- lapply(x, sort)
+z <- unlist(lapply(y, FUN = function(x){paste(x, collapse="-")}))
+myData$Mouse_genotype <- z
+rm(x, y, z)
+## Order the levels to be more clear in later plots (parents will be low and down 
+## on the legend, hybrids in between...)
+myData$Mouse_genotype <- factor(
+  myData$Mouse_genotype,
+  levels = c("NMRI", "WSB", "WP", "PWD1", "SCHUNT-SCHUNT", 
+             "STRA-STRA", "SCHUNT-STRA", "BUSNA-STRA","PWD-SCHUNT",
+             "BUSNA-PWD", "BUSNA-BUSNA", "PWD-PWD"),
+  labels = c("NMRI", "MMd_F0 (Ws-Ws)", "Mmm-Mmd_Hybrid (WP)", "MMm_F0 (Pw1-Pw1)", "MMd_F0 (Sc-Sc)", 
+             "MMd_F0 (St-St)", "MMd_F1 (Sc-St)", "Mmm-Mmd_F1 (Bu-St)", "Mmm-Mmd_F1 (Pw-Sc)",
+             "MMm_F1 (Bu-Pw)", "MMm_F0 (Bu-Bu)", "MMm_F0 (Pw-Pw)"))
+# dpi as numbers
+myData$dpi = as.numeric(as.character(myData$dpi))
+#  -----------------
 
+# 1. Calculate maximum value & at which dpi it happens
+# 1.1 OPG
+datMaxOPG = myData %>% dplyr::group_by(EH_ID) %>%
+  filter(OPG == max(OPG, na.rm = T)) %>%
+  dplyr::select(EH_ID, dpi, OPG, Mouse_genotype)%>% data.frame()
+table(datMaxOPG$dpi)
+# 1.2 fecal DNA
+datMaxDNA = myData %>% group_by(EH_ID) %>%
+  dplyr::filter(Genome_copies_mean == max(Genome_copies_mean, na.rm = T)) %>%
+  dplyr::select(EH_ID, dpi, Genome_copies_mean, Mouse_genotype)%>% data.frame()
+table(datMaxDNA$dpi)
+# 1.3 relative weight loss
+datMaxWL = myData %>% group_by(EH_ID) %>%
+  filter(weightloss == max(weightloss, na.rm = T)) %>%
+  dplyr::select(EH_ID, dpi, weightloss, Mouse_genotype)%>% data.frame()
+table(datMaxWL$dpi)
+
+datMaxALL = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype")], 
+                        datMaxDNA[c("EH_ID", "Genome_copies_mean", "Mouse_genotype")]),
+                  datMaxWL[c("EH_ID", "weightloss", "Mouse_genotype")])
+
+### NB:  try with a window!!
+
+# plot overview
+p1 = ggplot(myData, aes(x= dpi, y = Genome_copies_mean)) + theme_bw() +
+  geom_line() +   facet_grid(.~EH_ID)
+p2 = ggplot(myData, aes(x= dpi, y = OPG)) + theme_bw() +
+  geom_line() +   facet_grid(.~EH_ID)
+p3 = ggplot(myData, aes(x= dpi, y = weightloss)) + theme_bw() +
+  geom_line() + facet_grid(.~EH_ID)
+grid.arrange(p1, p2, p3, nrow = 3)
+
+# ----------------------------
 ### Q1: Is the DNA coming from the counted oocyst?
-# Q1a: Correlation of the two
-ggplot(sdt, aes(x=dpi, y=OPG)) + geom_point() + geom_line(aes(group=EH_ID))
-ggplot(sdt, aes(x=dpi, y=Genome_copies_mean)) + geom_point() + geom_line(aes(group=EH_ID))
-ggplot(sdt, aes(x=dpi, y=weightloss)) + geom_point() + geom_line(aes(group=EH_ID))
-
-ggplot(sdt, aes(x=OPG, y=Genome_copies_mean)) + geom_point()
-cor.test(sdt$OPG, sdt$Genome_copies_mean, use = "complete.obs", method = "spearman")
-
+# Q1a: Correlation of the two (Susie's code)
+# Q1b: Prediction of one b the other with a lag?
 # Granger causality: DROPPED. For details, see "Appendix" part at the end of the code
+# ----------------------------
 
 # ----------------------------
 # Q2b: Does DNA predict a health effect on the host “overall” (e.g. maximum)?
 # ----------------------------
 
-# Tips from stats meeting 14 oct 2020: # fit within individual, extract metric
-# extract summary statistics, meaningful, then relate that to maxWL
-# Cons: neglect the uncertainty; Pros:simple and biologically meaningful
-
-# Use growthcurver package to fit individual logistic regression curve and extract summary stats
-#https://cran.r-project.org/web/packages/growthcurver/vignettes/Growthcurver-vignette.html
-library(growthcurver)
-sdt$dpi = as.numeric(as.character(sdt$dpi))
-### DPI AS NUMERIC!!
-
-# 1. Calculate maximum value & at which dpi it happens
-# 1.1 OPG
-datMaxOPG = sdt %>% group_by(EH_ID) %>%
-  filter(OPG == max(OPG, na.rm = T)) %>%
-  select(EH_ID, dpi, OPG)%>% data.frame()
-table(datMaxOPG$dpi)
-
-# 1.2 fecal DNA
-datMaxDNA = sdt %>% group_by(EH_ID) %>%
-  filter(Genome_copies_mean == max(Genome_copies_mean, na.rm = T)) %>%
-  select(EH_ID, dpi, Genome_copies_mean)%>% data.frame()
-table(datMaxDNA$dpi)
-
-# 1.3 relative weight loss
-datMaxWL = sdt %>% group_by(EH_ID) %>%
-  filter(weightloss == max(weightloss, na.rm = T)) %>%
-  select(EH_ID, dpi, weightloss)%>% data.frame()
-table(datMaxWL$dpi)
-
-# plot overview
-p1 = ggplot(sdt, aes(x= dpi, y = Genome_copies_mean)) + theme_bw() +
-  geom_line() + 
-  facet_grid(.~EH_ID)
-p2 = ggplot(sdt, aes(x= dpi, y = OPG)) + theme_bw() +
-  geom_line() + 
-  facet_grid(.~EH_ID)
-p3 = ggplot(sdt, aes(x= dpi, y = weightloss)) + theme_bw() +
-  geom_line() +
-  facet_grid(.~EH_ID)
-grid.arrange(p1, p2, p3, nrow = 3)
-
-# 2. Shape input data for Growthcurver:
-
-# 2.1. OPG: peak at dpi 6, 7
-subDF_OPG = sdt[c("OPG", "dpi",  "EH_ID")]
-# replace NA at dpi 1 & 2 by 0 as dpi 3 is always 0
-subDF_OPG[is.na(subDF_OPG)] = 0
-# for growthcurer
-names(subDF_OPG)[names(subDF_OPG) %in% "dpi"] = "time"
-subDF_OPG = subDF_OPG[order(subDF_OPG$time),]
-# split in 2 df for individuals with peak at dpi6 or dpi7:
-subDF_OPG_6 = subDF_OPG[subDF_OPG$EH_ID %in% datMaxOPG$EH_ID[datMaxOPG$dpi %in% 6],]
-subDF_OPG_7 = subDF_OPG[subDF_OPG$EH_ID %in% datMaxOPG$EH_ID[datMaxOPG$dpi %in% 7],]
-# long to wide format
-wideDF_OPG_6 = data.frame(pivot_wider(subDF_OPG_6, names_from = EH_ID, values_from = OPG) )
-wideDF_OPG_6 = wideDF_OPG_6[wideDF_OPG_6$time %in% 0:6,]
-wideDF_OPG_7 = data.frame(pivot_wider(subDF_OPG_7, names_from = EH_ID, values_from = OPG) )
-wideDF_OPG_7 = wideDF_OPG_7[wideDF_OPG_7$time %in% 0:7,]
-
-# 2.2. Fecal DNA: peak at dpi 4, 5, 6
-subDF_DNA = sdt[c("Genome_copies_mean", "dpi",  "EH_ID")]
-## Do NOT replace NAs
-# for growthcurer
-names(subDF_DNA)[names(subDF_DNA) %in% "dpi"] = "time"
-subDF_DNA = subDF_DNA[order(subDF_DNA$time),]
-# split in 3 df for individuals with peak at dpi4, 5 or 6:
-subDF_DNA_4 = subDF_DNA[subDF_DNA$EH_ID %in% datMaxDNA$EH_ID[datMaxDNA$dpi %in% 4],]
-subDF_DNA_5 = subDF_DNA[subDF_DNA$EH_ID %in% datMaxDNA$EH_ID[datMaxDNA$dpi %in% 5],]
-subDF_DNA_6 = subDF_DNA[subDF_DNA$EH_ID %in% datMaxDNA$EH_ID[datMaxDNA$dpi %in% 6],]
-# long to wide format
-wideDF_DNA_4 = data.frame(pivot_wider(subDF_DNA_4, names_from = EH_ID, values_from = Genome_copies_mean) )
-wideDF_DNA_4 = wideDF_DNA_4[wideDF_DNA_4$time %in% 0:4,]
-wideDF_DNA_5 = data.frame(pivot_wider(subDF_DNA_5, names_from = EH_ID, values_from = Genome_copies_mean) )
-wideDF_DNA_5 = wideDF_DNA_5[wideDF_DNA_5$time %in% 0:5,]
-wideDF_DNA_6 = data.frame(pivot_wider(subDF_DNA_6, names_from = EH_ID, values_from = Genome_copies_mean) )
-wideDF_DNA_6 = wideDF_DNA_6[wideDF_DNA_6$time %in% 0:6,]
-## correct manual error
-wideDF_DNA_6$LM0207[1] = 0
-
-# 3. Fit growthcurver logistic regression
-gc_fit_OPG6 <- SummarizeGrowthByPlate(wideDF_OPG_6, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_OPG6.pdf")
-gc_fit_OPG6 # LM0206 and LM0214: no fit, just one value at peak
-gc_fit_OPG7 <- SummarizeGrowthByPlate(wideDF_OPG_7, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_OPG7.pdf")
-gc_fit_OPG7 # LM0218: no fit, 0s then 3 really close values until peak
-
-gc_fit_DNA4 <- SummarizeGrowthByPlate(wideDF_DNA_4, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_DNA4.pdf")
-gc_fit_DNA4 # cannot fit
-gc_fit_DNA5 <- SummarizeGrowthByPlate(wideDF_DNA_5)
-gc_fit_DNA5 # 9 fail
-failed = gc_fit_DNA5$sample[gc_fit_DNA5$note %in% "cannot fit data"]
-wideDF_DNA_5_nofail = data.frame(
-  pivot_wider(subDF_DNA_5[!subDF_DNA_5$EH_ID %in% failed,], 
-              names_from = EH_ID, values_from = Genome_copies_mean) )
-wideDF_DNA_5_nofail = wideDF_DNA_5_nofail[wideDF_DNA_5_nofail$time %in% 0:5,]
-gc_fit_DNA5_notfail <- SummarizeGrowthByPlate(wideDF_DNA_5_nofail, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_DNA5.pdf")
-gc_fit_DNA5_notfail
-gc_fit_DNA6 <- SummarizeGrowthByPlate(wideDF_DNA_6, plot_fit = TRUE, plot_file = "fig/fitGrowthCurvesPerInd/gc_plots_DNA6.pdf")
-gc_fit_DNA6 # cannot fit
-
-# Here, the population size at the beginning of the growth curve is given by N0. 
-# The maximum possible population size in a particular environment, 
-# or the carrying capacity, is given by K. The intrinsic growth rate 
-# of the population, r, is the growth rate that would occur if there were no 
-# restrictions imposed on total population size. Growthcurver finds the best
-# values of K, r, and N0 for the growth curve data.
-
-## After observing the curves, I am not sure it is really meaningful,
-# applicable to oocysts & DNA. To be discussed.
-
-###### Option 2: Extract metrics:
-# what is the peak day?
-# what is the peak value?
-sdt$dpi = as.numeric(as.character(sdt$dpi))
-### DPI AS NUMERIC!!
-datMaxOPG = sdt %>% group_by(EH_ID) %>%
-  filter(OPG == max(OPG, na.rm = T)) %>%
-  select(EH_ID, dpi, OPG)%>% data.frame()
-names(datMaxOPG)[names(datMaxOPG) %in% "dpi"] = "dpi_maxOPG"
-
-datMaxDNA = sdt %>% group_by(EH_ID) %>%
-  filter(Genome_copies_mean == max(Genome_copies_mean, na.rm = T)) %>%
-  select(EH_ID, dpi, Genome_copies_mean)%>% data.frame()
-names(datMaxDNA)[names(datMaxDNA) %in% "dpi"] = "dpi_maxDNA"
-
-datMaxWL = sdt %>% group_by(EH_ID) %>%
-  filter(weightloss == max(weightloss, na.rm = T)) %>%
-  select(EH_ID, dpi, weightloss)%>% data.frame()
-names(datMaxWL)[names(datMaxWL) %in% "dpi"] = "dpi_maxWL"
-
-datMaxALL = merge(merge(datMaxOPG, datMaxDNA), datMaxWL)
-
-# How do they correlate?
-## time:
-table(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxDNA)
-chisq.test(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxDNA) # nope
-
-table(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxWL)
-chisq.test(datMaxALL$dpi_maxOPG, datMaxALL$dpi_maxWL) # nope
-
-table(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL)
-chisq.test(datMaxALL$dpi_maxDNA, datMaxALL$dpi_maxWL) # nope
-
-# values:
+# Extract metrics: # what is the peak day? # what is the peak value?
 ggplot(datMaxALL, aes(x = OPG, y = Genome_copies_mean)) +
   geom_point() + theme_bw()
 cor.test(datMaxALL$OPG, datMaxALL$Genome_copies_mean, method = "spearman")
@@ -218,25 +112,56 @@ par(mfrow = c(2, 2))
 plot(modFull) # looks OK
 par(mfrow = c(1, 1)) 
 
-# pretty residuals plot: https://drsimonj.svbtle.com/visualising-residuals
-# Select out data of interest:
-d <- datMaxALL %>% select(weightloss, OPG, Genome_copies_mean)
-# Fit the model
-fit <- lm(weightloss ~ OPG * Genome_copies_mean, data = d)
-# Obtain predicted and residual values
-d$predicted <- predict(fit)
-d$residuals <- residuals(fit)
-# plot residuals
-d %>% 
-  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
-  ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
-  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
-  geom_point(aes(fill = residuals), shape =21, size = 3) +  # Points of actual values
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
-  geom_point(aes(y = predicted)) +
-  facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
-  theme_bw()
+# test same analyses than in paper 2 BUT with genomic data
+testSignifWithinParas_updated <- function(dataframe, which){
+  if(which == "RES"){
+    modFULL <- MASS::glm.nb(OPG ~ Mouse_genotype, data = dataframe)
+    mod0 <- MASS::glm.nb(OPG ~ 1, data = dataframe)
+  } else if (which == "RES_DNA"){
+    modFULL <- MASS::glm.nb(Genome_copies_mean ~ Mouse_genotype, data = dataframe)
+    mod0 <- MASS::glm.nb(Genome_copies_mean ~ 1, data = dataframe)
+  } else if (which == "IMP"){
+    modFULL <- lm(weightloss ~ Mouse_genotype, data = dataframe)
+    mod0 <- lm(weightloss ~ 1, data = dataframe)
+  } else if (which == "TOL"){
+    modFULL <- lm(weightloss ~ 0 + OPG : Mouse_genotype, data = dataframe)
+    mod0 <- lm(weightloss ~ 0 + OPG, data = dataframe)
+  } else if (which == "TOL_DNA"){
+    modFULL <- lm(weightloss ~ 0 + Genome_copies_mean : Mouse_genotype, data = dataframe)
+    mod0 <- lm(weightloss ~ 0 + Genome_copies_mean, data = dataframe)
+  }
+  G <- lrtest(modFULL, mod0)
+  return(list(modfull = modFULL, LRT = G))
+}
+
+# RES
+testSignifWithinParas_updated(datMaxALL, "RES")
+# RES_DNA
+testSignifWithinParas_updated(datMaxALL, "RES_DNA")
+# IMP
+testSignifWithinParas_updated(datMaxALL, "IMP")
+# TOL
+testSignifWithinParas_updated(datMaxALL, "TOL")
+# TOL_DNA
+testSignifWithinParas_updated(datMaxALL, "TOL_DNA")
+
+library(ggeffects)
+library(cowplot)
+DFpredicted = ggpredict(testSignifWithinParas_updated(datMaxALL, "RES")$modfull, terms = "Mouse_genotype")
+p1=ggplot(DFpredicted, aes(x, predicted)) + geom_point() + theme_bw() +
+  geom_errorbar(aes(ymin= conf.low, ymax=conf.high)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+DFpredicted2 = ggpredict(testSignifWithinParas_updated(datMaxALL, "RES_DNA")$modfull, terms = "Mouse_genotype")
+p2=ggplot(DFpredicted2, aes(x, predicted)) + geom_point() + theme_bw() +
+  geom_errorbar(aes(ymin= conf.low, ymax=conf.high)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+plot_grid(p1, p2, labels = c("A: OPG", "B: DNA"))
+
+
+
+
+
 
 # ------------------
 # APPENDIX (Junk...)
