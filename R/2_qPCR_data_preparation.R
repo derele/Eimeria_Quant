@@ -14,6 +14,7 @@ library(ggpubr)
 library(rcompanion)
 library(dplyr)
 library(gridExtra)
+library(rstatix)
 
 ##Load data
 if(!exists("sample.data")){
@@ -117,13 +118,56 @@ data.std.lm%>%
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), 
               aes(size= 20,fill= Cycler, shape= Parasite), color= "black", alpha= 0.5)+
-  #stat_cor(label.x = 5, label.y = c(35,30,25), 
-  #         aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~")))+ # Add correlation coefficient
-  #stat_regline_equation(label.x = 5, label.y = c(36.5,31.5,26.5))+ # Add Regression equation lm Ct~log10(Oocyst_count)
   labs(tag = "A)")+
   theme_bw() +
   theme(text = element_text(size=20))+
   annotation_logticks(sides = "b")
+
+##Ct modeled by Gene counts; data from different Cyclers
+data.std.lm%>%
+  ggplot(aes(x = Ct, y = Genome_copies, color= Cycler)) +
+  geom_smooth(method = "lm", se = T) +
+  guides(color = "none", size = "none") +  # Size legend also removed
+  scale_y_log10("log 10 Eimeria genome copies", 
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
+  stat_cor(label.x = 25, label.y = c(8,7,6), 
+           aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~")))+ # Add correlation coefficient
+  stat_regline_equation(label.x = 25, label.y = c(8.5,7.5,6.5))+ # Add Regression equation lm log10(Genome_copies)~Ct+Cycler
+  labs(tag = "A)")+
+  theme_bw() +
+  theme(text = element_text(size=20))+
+  annotation_logticks(sides = "l")-> A
+
+data.std.lm%>%
+  dplyr::select(Genome_copies, Cycler)%>%
+  group_by(Cycler) %>%
+  get_summary_stats(Genome_copies, type = "mean_sd")
+
+data.std.lm%>%
+  dplyr::select(Genome_copies, Cycler)%>%
+  anova_test(Genome_copies ~ Cycler)-> cycler.aov 
+
+data.std.lm%>%
+  dplyr::select(Genome_copies, Cycler)%>%
+  pairwise_t_test(Genome_copies ~ Cycler, p.adjust.method = "bonferroni")-> cycler.pwc
+
+# Show adjusted p-values
+cycler.pwc%>%
+  add_xy_position(x = "Cycler")-> cycler.pwc
+
+data.std.lm%>%
+  dplyr::select(Genome_copies, Cycler)%>%
+  ggboxplot(x = "Cycler", y = "Genome_copies", color = "black", 
+            fill = "Cycler", palette =c("#00BA38", "#F8766D", "#619CFF")) +
+  stat_pvalue_manual(cycler.pwc, label = "p.adj", tip.length = 0, step.increase = 0.1) +
+  labs(subtitle = get_test_label(cycler.aov, detailed = TRUE),
+    caption = get_pwc_label(cycler.pwc))#+
+  #scale_y_log10("log 10 Eimeria genome copies", 
+  #              breaks = scales::trans_breaks("log10", function(x) 10^x),
+  #              labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  #annotation_logticks(sides = "l")
 
 ##Ct modeled by Oocyst_counts and extra predictors to be considered 
 ##Model 1: Ct modeled by oocyst count simple without other predictor
@@ -182,10 +226,10 @@ data.std.lm%>%
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  labs(tag = "A)")+
+  labs(tag = "B)")+
   theme_bw() +
   theme(text = element_text(size=20))+
-  annotation_logticks(sides = "l")-> A
+  annotation_logticks(sides = "l")-> B
 
 ##Linear model Genome copies per ng modeled by Oocyst count 
 data.std.lm%>%
@@ -199,10 +243,10 @@ data.std.lm%>%
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  labs(tag = "B)")+
+  labs(tag = "C)")+
   theme_bw() +
   theme(text = element_text(size=20))+
-  annotation_logticks(sides = "bl")-> B
+  annotation_logticks(sides = "bl")-> C
 
 ##Model 11: Genome copies modeled by Oocyst count, parasite and cycle 
 lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
