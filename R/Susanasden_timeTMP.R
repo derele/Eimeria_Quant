@@ -1,73 +1,64 @@
 ### Code to analyse
 ## 1) Correlation among DNA quantification methods
-## 2) Course of infection by DNA quantification method 
+## 2) Course of infection by DNA quantification method
 
 library("ggplot2")
-library("dplyr")
+#library("dplyr")
 library("vegan")
 library("gridExtra")
-library("tscount")
-library(gplots)
+#library("tscount")
+#library(gplots)
 library(lme4)
 library(MASS)
-library("stargazer")
+#library("stargazer")
 library("plm")
 library("AER")
 library("nparLD")
 
-mytab <- read.csv("tmp/temporarydataset.csv")
+#mytab <- read.csv("tmp/temporarydataset.csv")
 
-# making little cheating
-mytab$OPG[mytab$dpi==2] <- 0
-mytab$OPG[mytab$dpi==1] <- 0
+source("R/1_Data_preparation.R")
+source("R/2_qPCR_data_preparation.R")
 
+ls()
+str(sdt)
 
-################################ Data  analyses start here #################
-###########
-###########
+sdt$dpi=as.factor(sdt$dpi)
 ###### Question 1: Can DNA and oocyst predict weightloss & and is there an interaction between the 2?
 # 1.1 Weightloss: as a rate
 # 1.2 weightloss as the peak --> ALICE
 
 #### classical glmm with ID as random effect
-weightglmm <- lmer(weightloss~Genome_copies_mean*OPG + (1|EH_ID), data= mytab)
+weightglmm <- lmer(weightloss~Genome_copies_gFaeces*OPG + (1|EH_ID), data= sdt)
 summary(weightglmm)
 
 #### linear regression, does not include time or ID.
-myweight_lm <- lm(weightloss~Genome_copies_mean*OPG, data=mytab)
+myweight_lm <- lm(weightloss~Genome_copies_gFaeces*OPG, data=sdt)
 coeftest(myweight_lm, vcov=vcovHC, type="HC1")
 
 #### Linear regression with ID as fixed effect #######################
 # elimninates the risk of biases due to ommited factors that vary across animals but not over time
 # linear regression with ID as a fixed effect: reports dummy coefficients for each ID. which is annoying
-myweight_lmf <- lm(weightloss~Genome_copies_mean*OPG + EH_ID - 1, data=mytab)
+myweight_lmf <- lm(weightloss~Genome_copies_gFaeces*OPG + EH_ID - 1, data=sdt)
 #coeftest(myweight_lm, vcov=vcovHC, type="HC1")
 summary(myweight_lmf)
 
 #OLS to the demeaned data
-##obtain demeaned data
-mytab_demeaned <- with(mytab, data.frame(weightloss=weightloss- ave(weightloss, EH_ID),
-                                         Genome_copies_mean=Genome_copies_mean-ave(Genome_copies_mean, EH_ID, FUN=function(x) mean(x, na.rm=T)),
-                                         OPG=OPG-ave(OPG, EH_ID, FUN=function(x) mean(x, na.rm=T))))
+##obtain subject demeaned data
+sdt_Sdemeaned <- with(sdt, data.frame(weightloss=weightloss- ave(weightloss, EH_ID),
+                      Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, EH_ID, FUN=function(x) mean(x, na.rm=T)),
+                      OPG=OPG-ave(OPG, EH_ID, FUN=function(x) mean(x, na.rm=T)),
+                      dpi=dpi,
+                      EH_ID=EH_ID))
 # estimate the regression
-summary(lm(weightloss~Genome_copies_mean*OPG - 1, data=mytab_demeaned))
+summary(lm(weightloss~Genome_copies_gFaeces*OPG, data=sdt_Sdemeaned))
 
-
-# alternative, use the plm package, plm() uses the entity-demeaned OLS algorithm and thus does not report dummy coefficients. 
-myweigh_plm_ID <- plm(weightloss~Genome_copies_mean * OPG,
-               data=mytab,
-               index=c("EH_ID"),
-               model="within",
-               effect = "individual")
-coeftest(myweigh_plm_dpi, vcov. = vcovHC, type = "HC1")
-
-# for time only
-myweigh_plm_dpi <- plm(weightloss~Genome_copies_mean * OPG,
-               data=mytab,
-               index=c("dpi"),
-               model="within",
-               effect = "time")
-coeftest(myweigh_plm_dpi, vcov. = vcovHC, type = "HC1")
+# time demeaned data
+sdt_Tdemeaned <- with(sdt, data.frame(weightloss=weightloss- ave(weightloss, dpi),
+                                         Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, dpi, FUN=function(x) mean(x, na.rm=T)),
+                                         OPG=OPG-ave(OPG, dpi, FUN=function(x) mean(x, na.rm=T))))
+# estimate the regression
+summary(lm(weightloss~Genome_copies_gFaeces*OPG, data=sdt_Tdemeaned))
 
 
 #### Regression with time and ID fixed effects###################################
@@ -76,27 +67,50 @@ coeftest(myweigh_plm_dpi, vcov. = vcovHC, type = "HC1")
 # The combined model (time and ID fixed effects) allows to eliminate bias from
 #unobservables that change over time but are constant over entities and it controls
 #for factors that differ across entities but are constant over time. Such models
-#can be estimated using the OLS algorithm 
+#can be estimated using the OLS algorithm
 
-class(mytab$EH_ID)
-class(mytab$dpi)                              
+sdt_STdemeaned <- with(sdt_Sdemeaned, data.frame(weightloss=weightloss- ave(weightloss, dpi),
+                      Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, dpi, FUN=function(x) mean(x, na.rm=T)),
+                      OPG=OPG-ave(OPG, dpi, FUN=function(x) mean(x, na.rm=T)),
+                      dpi=dpi,
+                      EH_ID=EH_ID))
 
-mytab$dpi <- as.factor(mytab$dpi)
+
+summary(sdt_STdemeaned)
+summary(sdt_Sdemeaned)
+
+cor.test(sdt_STdemeaned$Genome_copies_gFaeces, sdt_STdemeaned$OPG, method="spearman")
+
+cor.test (sdt$Genome_copies_gFaeces, sdt$OPG, method="spearman")
+nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG")])))
+
+# estimate the regression
+sdtST=na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])
+ST.lm=lm(weightloss~Genome_copies_gFaeces*OPG, data=sdtST)
+int.lm=lm(weightloss~1, data=sdtST)
+
+OPG.lm=lm(weightloss~Genome_copies_gFaeces, data=sdtST)
+GC.lm=lm(weightloss~OPG, data=sdtST)
+I.lm=lm(weightloss~Genome_copies_gFaeces+OPG, data=sdtST)
+
+anova(ST.lm, GC.lm)
+anova(ST.lm, OPG.lm)
+anova(ST.lm, I.lm)
+
+summary(ST.lm)
+anova(ST.lm, int.lm)
+
+plot(ST.lm)
+
+class(sdt$EH_ID)
+class(sdt$dpi)
+
 
 # with lm we get the dummy variables, which is annoying
 myweigh_lmft <- lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
                data=mytab)
 summary(myweigh_lmft)
 
-# plm does not report any dummy variable which is cool
-myweigh_plm <- plm(weightloss~Genome_copies_mean * OPG,
-               data=mytab,
-               index=c("EH_ID", "dpi"),
-               model="within",
-               effect = "twoways")
-# obtain a summary based on clusterd standard errors
-# (adjustment for autocorrelation + heteroskedasticity)
-coeftest(myweigh_plm, vcov. = vcovHC, type = "HC1")
 
 # interestingly when we include time fixed effects (controls for effects that change
 #over time and not because of ID) we don't get a significant effect for OPG and the
@@ -149,37 +163,28 @@ summary(mytab$Genome_copies_mean)
 
 # time demeaned data
 
-mytab_td <- with(mytab, data.frame(weightloss=weightloss- ave(weightloss, dpi),
-                                         Genome_copies_mean=Genome_copies_mean-ave(Genome_copies_mean, dpi, FUN=function(x) mean(x, na.rm=T)),
-                                         OPG=OPG-ave(OPG, dpi, FUN=function(x) mean(x, na.rm=T))))
-
-ggplot(mytab_td, aes(x=Genome_copies_mean)) + geom_histogram()
-ggplot(mytab_td, aes(x=OPG)) + geom_histogram()
-
 # estimate the regression
-summary(lm(OPG~Genome_copies_mean - 1, data=mytab_td))
+summary(lm(OPG~Genome_copies_gFaeces - 1, data=sdtST))
 
-cor.test(mytab_td$OPG, mytab_td$Genome_copies_mean, method = "spearman")
+#corr <- ggplot(mytab, aes(x= log(1+Genome_copies_mean), y= log(1+OPG))) +
+#    geom_point(aes(colour=factor(dpi)), size = 2, alpha=0.8)+
+#    xlab("qpcr DNA, log(+ 1)") +
+#    ylab("Oocysts, log(+ 1)") +
+#    theme_classic()
 
-corr <- ggplot(mytab, aes(x= log(1+Genome_copies_mean), y= log(1+OPG))) +
-    geom_point(aes(colour=factor(dpi)), size = 2, alpha=0.8)+
-    xlab("qpcr DNA, log(+ 1)") +
-    ylab("Oocysts, log(+ 1)") +
-    theme_classic()
+#corr_t <- ggplot(mytab_td, aes(x= log(max(Genome_copies_mean, na.rm=T) + Genome_copies_mean), y= log(max(OPG) + OPG))) +
+#    geom_point(size = 2, alpha=0.8)+
+#    xlab("qpcr DNA, log(+ max)") +
+#    ylab("Oocysts, log(+ max)") +
+#    theme_classic()
 
-corr_t <- ggplot(mytab_td, aes(x= log(max(Genome_copies_mean, na.rm=T) + Genome_copies_mean), y= log(max(OPG) + OPG))) +
-    geom_point(size = 2, alpha=0.8)+
-    xlab("qpcr DNA, log(+ max)") +
-    ylab("Oocysts, log(+ max)") +
-    theme_classic()
+#corr_t
 
-corr_t
-
-jpeg("fig/Figure_cor.jpeg",
-     width = 6, height = 5, units = "in", pointsize = 10,
-     res = 500)
-ggarrange(corr, corr_t, labels = c("a", "b"))
-dev.off()
+#jpeg("fig/Figure_cor.jpeg",
+#     width = 6, height = 5, units = "in", pointsize = 10,
+#     res = 500)
+#ggarrange(corr, corr_t, labels = c("a", "b"))
+#dev.off()
 
 library(ggpubr)
 
