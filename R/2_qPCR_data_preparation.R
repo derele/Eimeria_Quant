@@ -159,7 +159,7 @@ lm.CtInt<- lm(Ct~log10(Oocyst_count)+Parasite*Cycler, data.std.lm)
 
 ##Comparison of models 
 compareLM(lm.CtAll, lm.CtPar, lm.CtCyc, lm.Ct, lm.CtInt)
-
+rm(lm.Ct, lm.CtPar, lm.CtCyc, lm.CtInt, lm.CtAll)
 ##Model 3 fit better the data... Cycler has major impact (confirm somehow our expectations)!
 
 ##Real standard curve##
@@ -261,11 +261,11 @@ data.std.lm%>%
   font("subtitle", size = 14)-> C
 
 ## ### Figure 1 Final Standard curves 
-pdf(file = "fig/Figure_1.pdf", width = 15, height = 15)
+#pdf(file = "fig/Figure_1.pdf", width = 15, height = 15)
 grid.arrange(A, C, B, D, widths = c(2, 2),
 layout_matrix = rbind(c(1, 2),
                       c(3, 4)))
-dev.off()
+#dev.off()
 
 ## If it is necessary some of the previous figures could be included as supplementary  
 
