@@ -101,14 +101,21 @@ anova(ST.lm, I.lm)
 summary(ST.lm)
 anova(ST.lm, int.lm)
 
-plot(ST.lm)
+#plot(ST.lm)
 
 class(sdt$EH_ID)
 class(sdt$dpi)
 
 # plot weight loss and genome copies
+jpeg("fig/GG_weightloss.jpeg",
+     width = 6, height = 5, units = "in", pointsize = 10,
+     res = 500)
 ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
-    geom_point()
+    geom_point(size=2, alpha=0.8)+
+    annotate("text", x=10, y=15, label="F=25.1, p<0.001", hjust = "left")+
+    labs(x="Genome copies (log+1)", y="Weight loss")+
+    theme_classic()
+dev.off()
 
 # plot residuals
 sdtST$predicted <- predict(ST.lm)
