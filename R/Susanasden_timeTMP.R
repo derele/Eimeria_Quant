@@ -21,6 +21,7 @@ source("R/1_Data_preparation.R")
 source("R/2_qPCR_data_preparation.R")
 
 ls()
+
 str(sdt)
 
 sdt$dpi=as.factor(sdt$dpi)
@@ -105,6 +106,32 @@ plot(ST.lm)
 class(sdt$EH_ID)
 class(sdt$dpi)
 
+# plot weight loss and genome copies
+ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
+    geom_point()
+
+# plot residuals
+sdtST$predicted <- predict(ST.lm)
+sdtST$residuals <- residuals(ST.lm)
+sdtST$logGC <- log(1+sdtST$Genome_copies_gFaeces)
+library(tidyr)
+
+sdtST %>%
+    gather(key="iv", value = "x", -logGC, -predicted, -residuals) %>%
+    ggplot(aes(x=x, y=logGC))+
+    geom_segment(aes(xend=x, yend=predicted), alpha=0.2)+
+    geom_point(aes(color=residuals))+
+    scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+    guides(color = FALSE) +
+    geom_point(aes(y = predicted), shape = 1) +
+     facet_grid(~ iv, scales = "free_x") +
+     theme_bw()
+
+ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome variable on y-axis
+    geom_segment(aes(xend = logGC, yend = predicted), alpha = .2) +  # alpha to fade lines
+    geom_point() +
+    geom_point(aes(y = predicted), shape = 1) +
+    theme_classic()  # Add theme for cleaner look
 
 # with lm we get the dummy variables, which is annoying
 myweigh_lmft <- lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
