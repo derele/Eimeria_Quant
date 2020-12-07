@@ -40,8 +40,6 @@ myData$Mouse_genotype <- factor(
 # dpi as numbers
 myData$dpi = as.numeric(as.character(myData$dpi))
 
-# time window, dpi 3 to dpi 10, were we have non null data
-myData <- myData[myData$dpi %in% 3:10,]
 #  -----------------
 
 # 1. Calculate maximum value & at which dpi it happens
@@ -61,18 +59,49 @@ datMaxWL = myData %>% group_by(EH_ID) %>%
   dplyr::select(EH_ID, dpi, weightloss, Mouse_genotype)%>% data.frame()
 table(datMaxWL$dpi)
 
-datMaxALL = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype")], 
+datMaxALL1 = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype")], 
                         datMaxDNA[c("EH_ID", "Genome_copies_gFaeces", "Mouse_genotype")]),
                   datMaxWL[c("EH_ID", "weightloss", "Mouse_genotype")])
 
-# plot overview
-p1 = ggplot(myData, aes(x= dpi, y = Genome_copies_gFaeces)) + theme_bw() +
-  geom_line() +   facet_grid(.~EH_ID)
-p2 = ggplot(myData, aes(x= dpi, y = OPG)) + theme_bw() +
-  geom_line() +   facet_grid(.~EH_ID)
-p3 = ggplot(myData, aes(x= dpi, y = weightloss)) + theme_bw() +
-  geom_line() + facet_grid(.~EH_ID)
-grid.arrange(p1, p2, p3, nrow = 3)
+# ----------------------------
+# NB. NOW WITH TIME WINDOW
+myData0 = myData # keep full for comparison
+# time window, dpi 3 to dpi 10, were we have non null data
+myData <- myData[myData$dpi %in% 3:10,]
+# ----------------------------
+
+# 1. Calculate maximum value & at which dpi it happens
+# 1.1 OPG
+datMaxOPG = myData %>% dplyr::group_by(EH_ID) %>%
+  filter(OPG == max(OPG, na.rm = T)) %>%
+  dplyr::select(EH_ID, dpi, OPG, Mouse_genotype)%>% data.frame()
+table(datMaxOPG$dpi)
+# 1.2 fecal DNA
+datMaxDNA = myData %>% group_by(EH_ID) %>%
+  dplyr::filter(Genome_copies_gFaeces == max(Genome_copies_gFaeces, na.rm = T)) %>%
+  dplyr::select(EH_ID, dpi, Genome_copies_gFaeces, Mouse_genotype)%>% data.frame()
+table(datMaxDNA$dpi)
+# 1.3 relative weight loss
+datMaxWL = myData %>% group_by(EH_ID) %>%
+  filter(weightloss == max(weightloss, na.rm = T)) %>%
+  dplyr::select(EH_ID, dpi, weightloss, Mouse_genotype)%>% data.frame()
+table(datMaxWL$dpi)
+
+datMaxALL2 = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype")], 
+                         datMaxDNA[c("EH_ID", "Genome_copies_gFaeces", "Mouse_genotype")]),
+                   datMaxWL[c("EH_ID", "weightloss", "Mouse_genotype")])
+
+# Comparison with/without window
+comp = merge(datMaxALL1, datMaxALL2, by = c("EH_ID", "Mouse_genotype"))
+
+table(comp$OPG.x != comp$OPG.y) # does not change OPG results
+table(comp$Genome_copies_gFaeces.x != comp$Genome_copies_gFaeces.y) # does not change DNA results
+table(comp$weightloss.x != comp$weightloss.y) # change for 2 animals weight loss
+
+comp[comp$weightloss.x != comp$weightloss.y,]
+
+check = myData0[myData0$EH_ID %in% c("LM0210", "LM0219"),]
+ggplot(check, aes(x = dpi, y = weight, col =EH_ID)) + geom_line() + geom_point()
 
 # ----------------------------
 ### Q1: Is the DNA coming from the counted oocyst?
@@ -109,32 +138,32 @@ series = series[myData(series$dpi),]
 # Check if the ACF plot has no bands crossing the threshold boundary except 0th lag
 # (which is the correlation of the observation with itself).
 
-install.packages("tseries")
-library(tseries)
+# install.packages("tseries")
+# library(tseries)
 # adf.test computes the Augmented Dickey-Fuller test for the null that x has a unit root.
 # Unit root tests are tests for stationarity in a time series. A time series has 
 # stationarity if a shift in time doesn't cause a change in the shape of the distribution;
 # unit roots are one cause for non-stationarity. These tests are known for having low 
 # statistical power
-inds = unique(myData$EH_ID)
-for (i in inds){
-  series = myData[myData$EH_ID %in% i,]
-  series = series[order(series$dpi),"OPG"]
-  # replace NA per 0 
-  series[is.na(series)] = 0
-  # perform test
-  print(c(i, round(adf.test(series)$p.value, 4)))
-}
+# inds = unique(myData$EH_ID)
+# for (i in inds){
+#   series = myData[myData$EH_ID %in% i,]
+#   series = series[order(series$dpi),"OPG"]
+#   # replace NA per 0 
+#   series[is.na(series)] = 0
+#   # perform test
+#   print(c(i, round(adf.test(series)$p.value, 4)))
+# }
 ## rejection of stationary TS in 3/22 individuals
 
-for (i in inds){
-  series = sdt[sdt$EH_ID %in% i,]
-  series = series[order(series$dpi),"Genome_copies_mean"]
-  # replace NA per 0 
-  series[is.na(series)] = 0
-  # perform test
-  print(c(i, round(adf.test(series)$p.value, 4)))
-}
+# for (i in inds){
+#   series = sdt[sdt$EH_ID %in% i,]
+#   series = series[order(series$dpi),"Genome_copies_mean"]
+#   # replace NA per 0 
+#   series[is.na(series)] = 0
+#   # perform test
+#   print(c(i, round(adf.test(series)$p.value, 4)))
+# }
 ## no rejection of stationary TS
 
 # https://en.wikipedia.org/wiki/Granger_causality
@@ -163,27 +192,51 @@ pgrangertest(OPG~Genome_copies_gFaeces, data=myData, index=c("EH_ID", "dpi"))
 # ----------------------------
 
 # Extract metrics: # what is the peak day? # what is the peak value?
-ggplot(datMaxALL, aes(x = OPG, y = Genome_copies_gFaeces)) +
+ggplot(datMaxALL1, aes(x = OPG, y = Genome_copies_gFaeces)) +
   geom_point() + theme_bw()
-cor.test(datMaxALL$OPG, datMaxALL$Genome_copies_gFaeces, method = "spearman")
+cor.test(datMaxALL1$OPG, datMaxALL1$Genome_copies_gFaeces, method = "spearman")
+# on window: does not change results
+ggplot(datMaxALL2, aes(x = OPG, y = Genome_copies_gFaeces)) +
+  geom_point() + theme_bw()
+cor.test(datMaxALL2$OPG, datMaxALL2$Genome_copies_gFaeces, method = "spearman")
 
-ggplot(datMaxALL, aes(x = OPG, y = weightloss)) +
+ggplot(datMaxALL1, aes(x = OPG, y = weightloss)) +
   geom_point() + theme_bw()
-cor.test(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
+cor.test(datMaxALL1$OPG, datMaxALL1$weightloss, method = "spearman")
+# on window: change results but not conclusion
+ggplot(datMaxALL2, aes(x = OPG, y = weightloss)) +
+  geom_point() + theme_bw()
+cor.test(datMaxALL2$OPG, datMaxALL2$weightloss, method = "spearman")
 
-ggplot(datMaxALL, aes(x = Genome_copies_gFaeces, y = weightloss)) +
+ggplot(datMaxALL1, aes(x = Genome_copies_gFaeces, y = weightloss)) +
   geom_point() + theme_bw()
-cor.test(datMaxALL$Genome_copies_gFaeces, datMaxALL$weightloss, method = "spearman")
+cor.test(datMaxALL1$Genome_copies_gFaeces, datMaxALL1$weightloss, method = "spearman")
+# on window: change results but not conclusion
+ggplot(datMaxALL2, aes(x = Genome_copies_gFaeces, y = weightloss)) +
+  geom_point() + theme_bw()
+cor.test(datMaxALL2$Genome_copies_gFaeces, datMaxALL2$weightloss, method = "spearman")
 
 # Can we predict weight loss by a combination of OPG and fecDNA?
 library(lmtest)
-modFull = lm(weightloss ~ OPG * Genome_copies_gFaeces, data = datMaxALL)
-modminusOPG = lm(weightloss ~ Genome_copies_gFaeces, data = datMaxALL)
-modminusDNA = lm(weightloss ~ OPG, data = datMaxALL)
-modminusInter = lm(weightloss ~ OPG + Genome_copies_gFaeces, data = datMaxALL)
+modFull = lm(weightloss ~ OPG * Genome_copies_gFaeces, data = datMaxALL1)
+modminusOPG = lm(weightloss ~ Genome_copies_gFaeces, data = datMaxALL1)
+modminusDNA = lm(weightloss ~ OPG, data = datMaxALL1)
+modminusInter = lm(weightloss ~ OPG + Genome_copies_gFaeces, data = datMaxALL1)
 list(signifOG = lrtest(modFull, modminusOPG),
      signifDNA = lrtest(modFull, modminusDNA),
      signifInter = lrtest(modFull, modminusInter))
+# Results:
+# We tested if the maximum weight loss during the experiment was influenced by OPG, 
+# Genome_copies_gFaeces and their interaction. To test the significance of the marginal 
+# contribution of each parameter to the full model, each parameter was removed from 
+# the full model, and the difference between full and reduced model was assessed using 
+# likelihood ratio tests (G). 
+  
+# We found that the maximum weight loss during infection was influenced by
+# both OPG and fecal Eimeria DNA; Their interaction was not found significant
+# (LRT: OPG: G=6.6, df=2, P=0.036; 
+# Genome_copies_gFaeces: G=18.2, df=2, P<0.001;
+# interaction: G=2.5, df=1, P=0.11)
 
 # plots
 par(mfrow = c(2, 2))
@@ -236,7 +289,7 @@ p2=ggplot(DFpredicted2, aes(x, predicted)) + geom_point() + theme_bw() +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 plot_grid(p1, p2, labels = c("A: OPG", "B: DNA"))
 
-# ------------------
+  # ------------------
 # APPENDIX (Junk...)
 # ------------------
 
