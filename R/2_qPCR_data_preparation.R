@@ -298,9 +298,9 @@ data.std%>%
 
 ###Determine that 10^0 and 10^1 measurements are basically like NTC when all the information is taken into account
 
-pdf(file = "fig/Supplementary_1.pdf", width = 15, height = 15)
+#pdf(file = "fig/Supplementary_1.pdf", width = 15, height = 15)
 grid.arrange(Supp_1)
-dev.off()
+#dev.off()
 rm(Supp_1)
 
 ###### Intersample variation experiment #####
@@ -446,19 +446,16 @@ data.spk.lm%>%
     theme(legend.text=element_text(size=20)) +
     theme(legend.key.size = unit(3,"line")) +
     geom_smooth(aes(color= Task, fill= Task), method = "lm")+            
-    #stat_cor(label.x = 0.75, label.y = c(5.5, 6.5),
-    #         aes(label = paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Task))+
-    ## Add correlation coefficient
-    #stat_regline_equation(aes(color = Task), label.x = 0.75, label.y = c(5,6))+
     guides(colour = guide_legend(override.aes = list(size=10))) +
     theme(text = element_text(size=20),legend.position = "none")+
-    labs(tag = "A)")+
-    annotation_logticks(sides = "bl")-> D
+    labs(tag = "B)")+
+    annotation_logticks(sides = "bl")-> B
 
-##Figure 3 comparison between Eimeria genome copies from oocyst DNA and from fecal DNA 
-#pdf(file = "fig/Figure_3.pdf", width = 10, height = 8)
-#grid.arrange(D)
-#dev.off()
+##Figure 2 comparison between Eimeria genome copies from oocyst DNA and from fecal DNA, intersample variation 
+pdf(file = "fig/Figure_2.pdf", width = 10, height = 8)
+grid.arrange(A,B)
+dev.off()
+rm(A,B)
 
 ##Model 13: Genome copies/ng gDNA modeled by Oocyst count, cycler and parasite as predictors
 #lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count), data = subset(data.spk.lm, Task== "Unknown"))
