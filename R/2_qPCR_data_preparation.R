@@ -298,10 +298,35 @@ data.std%>%
 
 ###Determine that 10^0 and 10^1 measurements are basically like NTC when all the information is taken into account
 
+### Tm as complementary reference for Negative samples 
+set.seed(2020)
+data.std%>%
+  select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm, Date)%>%
+  filter(Task%in%c("Standard", "NTC"))%>%
+  ggplot(aes(x = Sample.Name, y = Tm)) +
+  scale_x_discrete(name = "Standard",
+                   labels= c("Eimeria_10_0"= "Oocysts 10⁰", "Eimeria_10_1"= "Oocysts 10¹",
+                             "Eimeria_10_2"= "Oocysts 10²", "Eimeria_10_3"= "Oocysts 10³",
+                             "Eimeria_10_4"= "Oocysts 10⁴", "Eimeria_10_5"= "Oocysts 10⁵",
+                             "Eimeria_10_6"= "Oocysts 10⁶", "H2O"= "NTC")) +
+  scale_y_continuous(name = "Tm")+ 
+  geom_jitter(shape=21, position=position_jitter(0.2), color= "black", alpha= 0.5,
+              aes(size= 25, fill= Cycler))+
+  theme_bw() +
+  theme(text = element_text(size=16),legend.position = "none")+
+  theme(axis.text.x = element_text(angle=90))+
+  stat_summary(fun.data=mean_cl_boot, geom="pointrange",
+               shape=16, size=0.5, color="black")+
+  labs(tag = "B)")+
+  geom_hline(yintercept = 75, linetype = 2)+
+  stat_compare_means(method = "anova",
+                     aes(label = paste0(..method.., ", ","p=",..p.format..)),
+                     label.y= 76, label.x = 6)-> Supp_2
+
 #pdf(file = "fig/Supplementary_1.pdf", width = 15, height = 15)
-grid.arrange(Supp_1)
+grid.arrange(Supp_1, Supp_2)
 #dev.off()
-rm(Supp_1)
+rm(Supp_1, Supp_2)
 
 ###### Intersample variation experiment #####
 ##Predict genome copies using model 8
@@ -452,9 +477,9 @@ data.spk.lm%>%
     annotation_logticks(sides = "bl")-> B
 
 ##Figure 2 comparison between Eimeria genome copies from oocyst DNA and from fecal DNA, intersample variation 
-pdf(file = "fig/Figure_2.pdf", width = 10, height = 8)
+#pdf(file = "fig/Figure_2.pdf", width = 10, height = 8)
 grid.arrange(A,B)
-dev.off()
+#dev.off()
 rm(A,B)
 
 ##Model 13: Genome copies/ng gDNA modeled by Oocyst count, cycler and parasite as predictors
