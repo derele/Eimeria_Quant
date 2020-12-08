@@ -266,10 +266,10 @@ grid.arrange(A, C, B, D, widths = c(2, 2),
 layout_matrix = rbind(c(1, 2),
                       c(3, 4)))
 #dev.off()
-
+rm(A,B,C,D)
 ## If it is necessary some of the previous figures could be included as supplementary  
 
-##Mean comparison standars against NTC
+##Mean comparison standards against NTC (Supplementary 1)
 set.seed(2020)
 data.std%>%
   select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm, Date)%>%
@@ -294,8 +294,14 @@ data.std%>%
                      aes(label = paste0(..method.., ",\n","p=",..p.format..)),
                      label.y= 33, label.x = 7)+
   stat_compare_means(label = "p.signif", method = "t.test",ref.group = "H2O", 
-                     label.y = c(40, 39, 33, 30.5, 24, 20, 16, 0))
-###Determine that 10^0 and 10^1 meassurments are basically like NTC when all the information is taken into account
+                     label.y = c(40, 39, 33, 30.5, 24, 20, 16, 0)) -> Supp_1
+
+###Determine that 10^0 and 10^1 measurements are basically like NTC when all the information is taken into account
+
+pdf(file = "fig/Supplementary_1.pdf", width = 15, height = 15)
+grid.arrange(Supp_1)
+dev.off()
+rm(Supp_1)
 
 ###### Intersample variation experiment #####
 ##Predict genome copies using model 8
@@ -347,14 +353,10 @@ data.unk.lm%>%
   theme(legend.text=element_text(size=20)) +
   theme(legend.key.size = unit(3,"line")) +
   geom_smooth(aes(color= Task, fill= Task), method = "lm")+            
-  #stat_cor(label.x = 0.75, label.y = c(5.5, 6.5),
-  #         aes(label = paste(..rr.label.., ..p.label.., sep= "~`,`~"), color = Task))+
-  ## Add correlation coefficient
-  #stat_regline_equation(aes(color = Task), label.x = 0.75, label.y = c(5,6))+
   guides(colour = guide_legend(override.aes = list(size=10))) +
   theme(text = element_text(size=20),legend.position = "none")+
-  labs(tag = "B)")+
-  annotation_logticks(sides = "bl")-> C
+  labs(tag = "A)")+
+  annotation_logticks(sides = "bl")-> A
 
 ##Model 12: Intersample variation considering Parasite, strain, cycler and sporulation rate as predictors
 lm.ISV<- lm(formula = log10(Genome_copies_ngDNA)~log10(Oocyst_count)+
@@ -363,14 +365,6 @@ summary(lm.ISV)
 ##Main effect from Oocyst count and small effect from Sporulation rate
 ##Compair model 11 (perfect fit) vs model 12 
 compareLM(lm.SCOoc, lm.ISV)
-
-##Predict genome copies from oocyst count and compair against previous prediction (Not finished, check!)
-##data.unk.lm$Genome_copies_ng_pred<- 10^predict(lm.ISV, data.unk.lm)
-
-##Figure 2 Intersample variation
-##pdf(file = "fig/Figure_2.pdf", width = 10, height = 8)
-##grid.arrange(C)
-##dev.off()
 
 ########## Spiked samples Experiment #########
 
