@@ -477,7 +477,7 @@ data.spk.lm%>%
     annotation_logticks(sides = "bl")-> B
 
 ##Figure 2 comparison between Eimeria genome copies from oocyst DNA and from fecal DNA, intersample variation 
-#pdf(file = "fig/Figure_2.pdf", width = 10, height = 8)
+#pdf(file = "fig/Figure_2.pdf", width = 10, height = 15)
 grid.arrange(A,B)
 #dev.off()
 rm(A,B)
