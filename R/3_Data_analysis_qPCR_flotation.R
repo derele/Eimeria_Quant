@@ -14,29 +14,26 @@ if(!exists("sdt")){
 ### 1) Correlation among Eimeria quantification methods
 ####Genome copies modeled by OPGs 
 sdt%>%
-  ggplot(aes(OPG+0.1, Genome_copies_gFaeces))+
+  ggplot(aes(OPG+1, Genome_copies_gFaeces))+
   geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 Oocyst per gram faeces (Flotation)", 
+  scale_x_log10(name = "log10 (Oocyst per gram faeces + 1) (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Genome copies/g faeces (qPCR)", 
+  scale_y_log10(name = "log10 (Genome copies per gram faeces) (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
   labs(tag= "A)")+
   theme_bw()+
   theme(text = element_text(size=16))+
-  #stat_cor(label.x = 5.5, label.y = 1.5,
-  #           aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~"))) +
-  #stat_regline_equation(label.x = 5.5, label.y = 2)+
   annotation_logticks()
 
 ##Model 1: Genome copies/g faeces modeled by OPG
-DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+0.1),
+DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1),
                data = sdt, na.action = na.exclude)
 summary(DNAbyOPG)
 ##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
-DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+0.1)*dpi,
+DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)*dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 ##Comparison of models
@@ -44,12 +41,12 @@ anova(DNAbyOPG, DNAbyOPG_dpi)
 
 ####OPGs modeled by Genome copies 
 sdt%>%
-  ggplot(aes(Genome_copies_gFaeces, OPG+0.1))+
+  ggplot(aes(Genome_copies_gFaeces, OPG+1))+
   geom_smooth(method = lm, col= "black")+
-  scale_y_log10(name = "log10 Oocyst per gram faeces (Flotation)", 
+  scale_y_log10(name = "log10 (Oocyst per gram faeces + 1) (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_x_log10(name = "log10 Genome copies/g faeces (qPCR)", 
+  scale_x_log10(name = "log10 (Genome copies per gram faeces) (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
@@ -59,11 +56,11 @@ sdt%>%
   annotation_logticks()
 
 ##Model 3: OPG modeled by Genome copies/g faeces
-OPGbyDNA <- lm(log10(OPG+0.1)~log10(Genome_copies_gFaeces),
+OPGbyDNA <- lm(log10(OPG+1)~log10(Genome_copies_gFaeces),
                data = sdt, na.action = na.exclude)
 summary(OPGbyDNA)
 ##Model 4: Genome copies/g faeces modeled by OPG with DPI interaction
-OPGbyDNA_dpi <- lm(log10(OPG+0.1)~log10(Genome_copies_gFaeces)*dpi,
+OPGbyDNA_dpi <- lm(log10(OPG+1)~log10(Genome_copies_gFaeces)*dpi,
                    data = sdt, na.action = na.exclude)
 summary(OPGbyDNA_dpi)
 
@@ -72,12 +69,12 @@ anova(OPGbyDNA, OPGbyDNA_dpi)
 
 ##Linear models by DPI
 sdt%>%
-    ggplot(aes(Genome_copies_gFaeces, OPG+0.1, fill=dpi))+
+    ggplot(aes(Genome_copies_gFaeces, OPG+1, fill=dpi))+
     geom_smooth(method = lm, se=FALSE, aes(Genome_copies_gFaeces, OPG+0.1, color=dpi))+
-    scale_y_log10(name = "log10 Oocyst per gram feces (Flotation)", 
+    scale_y_log10(name = "log10 (Oocyst per gram faeces + 1) (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-    scale_x_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
+    scale_x_log10(name = "log10 (Genome copies per gram faeces) (qPCR)", 
                   breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+
     geom_point(shape=21, size=5) +
@@ -88,65 +85,26 @@ sdt%>%
 ##Weak correlation between measurments by DPI :S 
 
 ###Course of infection 
-## Oocysts
-sdt%>%
-  ggplot(aes(dpi, OPG))+
-  geom_boxplot()+
-  xlab("Day post infection")+
-  scale_y_log10("log10 Oocyst per gram faeces (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
-  labs(tag= "A)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")-> A1
-
-sdt%>%
-  dplyr::arrange(dpi)%>%
-  ggplot(aes(as.numeric(as.character(dpi)), OPG, colour= EH_ID))+
-  xlab("Day post infection")+
-  scale_y_log10("log10 Oocyst per gram feces (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_x_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9,10))+
-  geom_line(alpha= 0.5)+
-  geom_jitter(shape=21, position=position_jitter(0.0), size=2.5, aes(fill= EH_ID), color= "black", alpha= 0.5)+
-  labs(tag= "A)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  stat_smooth(color= "black", method = "loess")+
-  annotation_logticks(sides = "l")-> A2
-
 ##Genome copies/g of faeces
+##Wilcoxon test (Compare mean per DPI with DPI 0 as reference)
 sdt%>%
-  ggplot(aes(dpi, Genome_copies_gFaeces))+
-  geom_boxplot()+
-  xlab("Day post infection")+
-  scale_y_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+ 
-  geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
-  labs(tag= "B)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks(sides = "l")-> B1
+  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
+  dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces)%>%
+  dplyr::arrange(EH_ID)%>%
+  dplyr::arrange(dpi)%>% ##for comparison 
+  wilcox_test(Genome_copies_gFaeces ~ dpi)%>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()%>%
+  add_xy_position(x = "dpi")-> stats.test
 
-sdt%>%
-  dplyr::arrange(dpi)%>%
-  ggplot(aes(as.numeric(as.character(dpi)), Genome_copies_gFaeces, colour= EH_ID))+
-  xlab("Day post infection")+
-  scale_y_log10("log10 Genome copies/g Faeces (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_x_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9,10))+
-  geom_line(alpha=0.5)+
-  geom_jitter(shape=21, position=position_jitter(0.0), size=2.5, aes(fill= EH_ID), color= "black", alpha= 0.5)+
-  labs(tag= "B)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  stat_smooth(color= "black", method = "loess")+
-  annotation_logticks(sides = "l")-> B2
+##Save statistical analysis
+x <- stats.test
+x$groups<- NULL
+write.csv(x, "Tables/Genome_copies_gFaeces_DPI_Comparison.csv")
+
+##Select just comparison against DPI 0
+stats.test%>%
+  filter(group1%in%c("0"))-> stats.test 
 
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
@@ -157,51 +115,108 @@ sdt%>%
   scale_y_log10("log10 Genome copies/g Faeces (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
+  geom_boxplot()+
+  geom_point(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
   xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_brewer(palette = "Set3")+
-  labs(tag= "A)")+
+  geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
+  scale_color_brewer(palette = "Paired")+
+  labs(tag= "A)", caption = get_pwc_label(stats.test))+
   theme_bw()+
   theme(text = element_text(size=16))+
   annotation_logticks(sides = "l")+
-  stat_compare_means(label= "p.signif", method = "t.test", ref.group = "0", paired = F, na.rm = TRUE)+
-  stat_compare_means(method =  "anova", label.y = 10.5, label.x = 2)
+  stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> A
+
 ##Significant mean difference from day 3 and on... Basically DPI 0, 1 and 2 DNA measurments are the same!
+
+## Oocysts
+##Wilcoxon test (Compare mean per DPI with DPI 0 as reference)
+#sdt%>%
+#  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
+#  dplyr::select(EH_ID, dpi,OPG)%>%
+#  dplyr::arrange(EH_ID)%>%
+#  dplyr::arrange(dpi)%>% ##for comparison 
+#  dplyr::mutate(OPG= OPG+1)%>%
+#  rstatix::wilcox_test(OPG ~ dpi, ref.group = "0")%>%
+#  adjust_pvalue(method = "bonferroni") %>%
+# add_significance()%>%
+#  add_xy_position(x = "dpi")#-> stats.test
+
+##Save statistical analysis
+#x <- stats.test
+#x$groups<- NULL
+#write.csv(x, "Tables/OPG_DPI_Comparison.csv")
+
+##Select just comparison against DPI 0
+#stats.test%>%
+#  filter(group1%in%c("0"))-> stats.test 
 
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
   dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces)%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
-  ggplot(aes(x= dpi, y= OPG))+
-  scale_y_log10("log10 Oocyst per g Faeces (Flotation)", 
+  ggplot(aes(x= dpi, y= OPG+1))+
+  scale_y_log10("log10 (Oocyst per gram faeces + 1) (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_boxplot(aes(color= dpi))+
-  geom_point(aes(color=dpi))+
+  geom_boxplot()+
+  geom_point(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
   xlab("Day post infection")+
-  geom_line(aes(group = EH_ID), color= "gray")+
-  scale_color_brewer(palette = "Set3")+
-  labs(tag= "B)")+
+  geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
+  scale_color_brewer(palette = "Paired")+
+  labs(tag= "B)", caption = get_pwc_label(stats.test))+
   theme_bw()+
   theme(text = element_text(size=16))+
   annotation_logticks(sides = "l")+
-  stat_compare_means(label= "p.signif", method = "t.test", ref.group = "4", paired = F, na.rm = TRUE)+
-  stat_compare_means(method =  "anova", label.y = 6.5, label.x = 2)
-##Significant mean difference from day 4 and on... Basically DPI 0 to 3 No OPG and DPI 4 equal to 10!
-##Weight loss 
-sdt%>%
-  ggplot(aes(dpi, weightloss))+
-  geom_boxplot()+
-  xlab("Day post infection")+
-  scale_y_continuous(name = "Weight loss")+ 
-  geom_jitter(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
-  labs(tag= "B)")+
-  theme_bw()+
-  theme(text = element_text(size=16))-> C1
+  stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> B
 
+##Significant mean difference from day 4 and on... Basically DPI 0 to 3 No OPG and DPI 4 equal to 10!
+
+##Weight loss 
+##Wilcoxon test (Compare mean per DPI with DPI 0 as reference)
+sdt%>%
+  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
+  dplyr::select(EH_ID, dpi, weightloss)%>%
+  dplyr::arrange(EH_ID)%>%
+  dplyr::arrange(dpi)%>% ##for comparison 
+  wilcox_test(weightloss ~ dpi)%>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()%>%
+  add_xy_position(x = "dpi")-> stats.test
+
+##Save statistical analysis
+x <- stats.test
+x$groups<- NULL
+write.csv(x, "Tables/Weightloss_DPI_Comparison.csv")
+
+##Select just comparison against DPI 0
+stats.test%>%
+  filter(group1%in%c("0"))-> stats.test 
+
+sdt%>%
+  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
+  dplyr::select(EH_ID, dpi,weightloss)%>%
+  dplyr::arrange(EH_ID)%>%
+  dplyr::arrange(dpi)%>% ##for comparison 
+  ggplot(aes(x= dpi, y= weightloss))+
+  geom_boxplot()+
+  geom_point(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
+  xlab("Day post infection")+
+  ylab("Weight loss (%)")+
+  geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
+  scale_color_brewer(palette = "Paired")+
+  labs(tag= "C)", caption = get_pwc_label(stats.test))+
+  theme_bw()+
+  theme(text = element_text(size=16))+
+  stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> C
+
+##Figure # Course of Eimeria Infection in genome copies, OPG, and weight loss
+#pdf(file = "fig/Figure_3.pdf", width = 10, height = 15)
+grid.arrange(A,B,C)
+#dev.off()
+rm(A,B, C)
+
+###################################### Extra code ###########################################
 ## DNA as a predictor of weightloss
 sdt%>%
    ggplot(aes(Genome_copies_gFaeces, weightloss))+
