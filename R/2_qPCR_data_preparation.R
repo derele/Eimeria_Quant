@@ -276,16 +276,16 @@ data.std%>%
   filter(Task%in%c("Standard", "NTC"))%>%
   ggplot(aes(x = Sample.Name, y = Ct)) +
   scale_x_discrete(name = "Standard",
-                   labels= c("Eimeria_10_0"= "Oocysts 10⁰", "Eimeria_10_1"= "Oocysts 10¹",
-                             "Eimeria_10_2"= "Oocysts 10²", "Eimeria_10_3"= "Oocysts 10³",
-                             "Eimeria_10_4"= "Oocysts 10⁴", "Eimeria_10_5"= "Oocysts 10⁵",
-                             "Eimeria_10_6"= "Oocysts 10⁶", "H2O"= "NTC")) +
+                   labels= c("Eimeria_10_0"= "Oocysts 10^0", "Eimeria_10_1"= "Oocysts 10^1",
+                             "Eimeria_10_2"= "Oocysts 10^2", "Eimeria_10_3"= "Oocysts 10^3",
+                             "Eimeria_10_4"= "Oocysts 10^4", "Eimeria_10_5"= "Oocysts 10^5",
+                             "Eimeria_10_6"= "Oocysts 10^6", "H2O"= "NTC")) +
   scale_y_continuous(name = "Ct")+ 
-  geom_jitter(shape=21, position=position_jitter(0.2), color= "black", alpha= 0.5,
-              aes(size= 25, fill= Cycler))+
+  geom_jitter(shape=21, position=position_jitter(0.2), color= "black", size= 5, alpha= 0.5,
+              aes(fill= Cycler))+
   theme_bw() +
-  theme(text = element_text(size=16),legend.position = "none")+
-  theme(axis.text.x = element_text(angle=90))+
+  theme(text = element_text(size=16),legend.position = "top")+
+  theme(axis.text.x = element_text(angle=-90))+
   stat_summary(fun.data=mean_cl_boot, geom="pointrange",
                shape=16, size=0.5, color="black")+
   labs(tag = "A)")+
@@ -305,16 +305,16 @@ data.std%>%
   filter(Task%in%c("Standard", "NTC"))%>%
   ggplot(aes(x = Sample.Name, y = Tm)) +
   scale_x_discrete(name = "Standard",
-                   labels= c("Eimeria_10_0"= "Oocysts 10⁰", "Eimeria_10_1"= "Oocysts 10¹",
-                             "Eimeria_10_2"= "Oocysts 10²", "Eimeria_10_3"= "Oocysts 10³",
-                             "Eimeria_10_4"= "Oocysts 10⁴", "Eimeria_10_5"= "Oocysts 10⁵",
-                             "Eimeria_10_6"= "Oocysts 10⁶", "H2O"= "NTC")) +
+                   labels= c("Eimeria_10_0"= "Oocysts 10^0", "Eimeria_10_1"= "Oocysts 10^1",
+                             "Eimeria_10_2"= "Oocysts 10^2", "Eimeria_10_3"= "Oocysts 10^3",
+                             "Eimeria_10_4"= "Oocysts 10^4", "Eimeria_10_5"= "Oocysts 10^5",
+                             "Eimeria_10_6"= "Oocysts 10^6", "H2O"= "NTC")) +
   scale_y_continuous(name = "Tm")+ 
-  geom_jitter(shape=21, position=position_jitter(0.2), color= "black", alpha= 0.5,
-              aes(size= 25, fill= Cycler))+
+  geom_jitter(shape=21, position=position_jitter(0.2), color= "black", size= 5, alpha= 0.5,
+              aes(fill= Cycler))+
   theme_bw() +
   theme(text = element_text(size=16),legend.position = "none")+
-  theme(axis.text.x = element_text(angle=90))+
+  theme(axis.text.x = element_text(angle=-90))+
   stat_summary(fun.data=mean_cl_boot, geom="pointrange",
                shape=16, size=0.5, color="black")+
   labs(tag = "B)")+
@@ -323,7 +323,7 @@ data.std%>%
                      aes(label = paste0(..method.., ", ","p=",..p.format..)),
                      label.y= 76, label.x = 6)-> Supp_2
 
-#pdf(file = "fig/Supplementary_1.pdf", width = 15, height = 15)
+#pdf(file = "fig/Supplementary_1.pdf", width = 10, height = 15)
 grid.arrange(Supp_1, Supp_2)
 #dev.off()
 rm(Supp_1, Supp_2)
