@@ -195,6 +195,8 @@ sdt%>%
   geom_text (x = 3.75, y = 6.05, show.legend = F,
              label = paste ("Spearman's rho ="))-> A
 
+corOPGbyDNA <-cor.test(log10(sdt$Genome_copies_gFaeces+1), log10(sdt$OPG+1),  method = "spearman")
+
 ##Model 3: OPG modeled by Genome copies/g faeces
 OPGbyDNA <- lm(log10(OPG+1)~log10(Genome_copies_gFaeces),
                data = sdt, na.action = na.exclude)
@@ -223,7 +225,21 @@ sdt%>%
   theme(text = element_text(size=16))+
   annotation_logticks() -> B
 
-##Weak correlation between measurments by DPI :S 
+sdt%>% 
+  nest(-dpi)%>% 
+  mutate(cor=map(data,~cor.test(log10(.x$Genome_copies_gFaeces+1), log10(.x$OPG+1), method = "sp"))) %>%
+  mutate(tidied = map(cor, tidy)) %>% 
+  unnest(tidied, .drop = T)%>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()-> x
+
+x$data<- NULL
+x$cor<- NULL
+x%>%
+  arrange(dpi)-> corOPGbyDNA_DPI
+
+write.csv(corOPGbyDNA_DPI, "Tables/Q1_OPG_DNA_Correlation_DPI.csv",  row.names = F)
+##Non significant correlation between measurements by DPI
 
 ##Figure 4# Spearman's Correlation between genome copies and OPG overall and by dpi
 #pdf(file = "fig/Figure_4.pdf", width = 10, height = 15)
