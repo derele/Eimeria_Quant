@@ -82,6 +82,7 @@ cor.test(datMaxALL$Genome_copies_gFaeces, datMaxALL$weightloss, method = "spearm
 
 # Can we predict weight loss by a combination of OPG and fecDNA?
 library(lmtest)
+
 modFull = lm(weightloss ~ OPG * Genome_copies_gFaeces, data = datMaxALL)
 modminusOPG = lm(weightloss ~ Genome_copies_gFaeces, data = datMaxALL)
 modminusDNA = lm(weightloss ~ OPG, data = datMaxALL)
@@ -97,9 +98,40 @@ par(mfrow= c(2,2))
 plot(modFull) # saved as FigS_modelFit_alice.pdf
 par(mfrow= c(1,1))
 
-
+# plot prediction
 library(ggeffects)
-ggpredict(modFull)
+library(sjPlot)
+library(sjmisc)
+library(ggplot2)
+p1 = plot_model(modFull, type = "pred", terms = c("OPG")) + theme_bw() +
+  ylim(0,20)
+p2 = plot_model(modFull, type = "pred", terms = c("Genome_copies_gFaeces")) + theme_bw()+
+  ylim(0,20)
+
+grid.arrange(p1, p2, ncol = 2)
+
+plot_model(modFull, type = "int", terms = c("OPG", "Genome_copies_gFaeces")) + theme_bw()
+
+# for standardisation:
+datMaxALL_standard = data.frame(scale(datMaxALL[c("Genome_copies_gFaeces", "OPG", "weightloss")]))
+
+modFull_std = lm(weightloss ~ OPG * Genome_copies_gFaeces, data = datMaxALL_standard)
+modminusOPG_std = lm(weightloss ~ Genome_copies_gFaeces, data = datMaxALL_standard)
+modminusDNA_std = lm(weightloss ~ OPG, data = datMaxALL_standard)
+modminusInter_std = lm(weightloss ~ OPG + Genome_copies_gFaeces, data = datMaxALL_standard)
+list(signifOG = lrtest(modFull_std, modminusOPG_std),
+     signifDNA = lrtest(modFull_std, modminusDNA_std),
+     signifInter = lrtest(modFull_std, modminusInter_std))
+# all good, does not change
+
+summary(modFull)
+summary(modFull_std)
+# http://dmcglinn.github.io/quant_methods/lessons/standardized_beta_coefficients.html#:~:text=Standardized%20%CE%B2%20coefficients,a%20standard%20deviation%20of%201.
+# weird, should not change if standardised!!
+round(summary(modFull)$coef, 3)
+round(summary(modFull_std)$coef, 3)
+
+
 
 
 # Results:
