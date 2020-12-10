@@ -109,6 +109,29 @@ library(ggplot2)
 # 
 plot_model(modFull, type = "int", terms = c("OPG", "Genome_copies_gFaeces")) + theme_bw()
 
+# relative importance of predictors
+library(relaimpo)
+
+calc.relimp(modminusInter)
+calc.relimp(modminusInter, rela=TRUE)
+
+# The total proportion of variance explained by the model with all two predictors is 59.53%. 
+# OPG contributed to 13%, and DNA for 46%. After normalisation, we found that the proportion of contribution of each predictor to the overall 
+# R2 is 78% for DNA, and 22% for OPG. 
+
+
+#For two predictors, after we get their relative importance measured by R2
+#, we might want to test whether one predictor is significantly more important than the other. However, unlike t-test, it is rather difficult to find an analytical test statistic for a test. Instead, bootstrap can be used. The package relaimpo includes two functions -- boot.relimp() and booteval.relimp() -- for the task.  The first function conducts the bootstrap and the second one gets the confidence intervals.
+
+bootresults<-boot.relimp(modminusInter, b=1000) 
+ci<-booteval.relimp(bootresults, norank=T)
+ci
+plot(ci)
+
+# Ulrike Grömping (2006). Relative Importance for Linear Regression in R: The
+# Package relaimpo. Journal of Statistical Software, 17(1), 1--27.
+# Your version of package relaimpo: R package version 2.2-3
+
 # for standardisation:
 datMaxALL_standard = data.frame(scale(datMaxALL[c("Genome_copies_gFaeces", "OPG", "weightloss")]))
 
@@ -123,6 +146,8 @@ list(signifOG = lrtest(modFull_std, modminusOPG_std),
 
 summary(modFull)
 summary(modFull_std)
+summary(modminusInter_std)
+
 # http://dmcglinn.github.io/quant_methods/lessons/standardized_beta_coefficients.html#:~:text=Standardized%20%CE%B2%20coefficients,a%20standard%20deviation%20of%201.
 # weird, should not change if standardised!!
 
