@@ -80,11 +80,14 @@ cor.test(datMaxALL$Genome_copies_gFaeces, datMaxALL$weightloss, method = "spearm
 # Can we predict weight loss by a combination of OPG and fecDNA?
 library(lmtest)
 
+modNull = lm(weightloss ~ 1, data = datMaxALL)
 modFull = lm(weightloss ~ OPG * Genome_copies_gFaeces, data = datMaxALL)
 modminusOPG = lm(weightloss ~ Genome_copies_gFaeces, data = datMaxALL)
 modminusDNA = lm(weightloss ~ OPG, data = datMaxALL)
 modminusInter = lm(weightloss ~ OPG + Genome_copies_gFaeces, data = datMaxALL)
-list(signifOG = lrtest(modFull, modminusOPG),
+
+list(signifFull = lrtest(modFull, modNull),
+     signifOG = lrtest(modFull, modminusOPG),
      signifDNA = lrtest(modFull, modminusDNA),
      signifInter = lrtest(modFull, modminusInter))
 
@@ -108,6 +111,19 @@ library(ggplot2)
 # grid.arrange(p1, p2, ncol = 2)
 # 
 plot_model(modFull, type = "int", terms = c("OPG", "Genome_copies_gFaeces")) + theme_bw()
+
+
+ggplot(df, aes(Mouse_genotype, as.numeric(ageAtInfection), col = Mouse_genotype)) +
+  geom_segment(aes(x = Mouse_genotype, xend = Mouse_genotype,
+                   y = avg, yend = mean_age_genotype),
+               size = 0.8) +
+  geom_hline(aes(yintercept = avg), color = "gray70", size = 0.6) +
+  
+  coord_flip() +
+  geom_jitter(size = 2, alpha = 0.25, width = 0.2) +
+  geom_point(aes(Mouse_genotype, as.numeric(mean_age_genotype)), size = 5) 
+
+
 
 # relative importance of predictors
 library(relaimpo)
