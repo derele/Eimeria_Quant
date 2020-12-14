@@ -99,31 +99,24 @@ plot(modFull) # saved as FigS_modelFit_alice.pdf
 par(mfrow= c(1,1))
 
 # plot prediction
-library(ggeffects)
-library(sjPlot)
-library(sjmisc)
-library(ggplot2)
-#p1 = plot_model(modFull, type = "pred", terms = c("OPG")) + theme_bw() +
-#   ylim(0,20)
-# p2 = plot_model(modFull, type = "pred", terms = c("Genome_copies_gFaeces")) + theme_bw()+
-#   ylim(0,20)
-# 
-# grid.arrange(p1, p2, ncol = 2)
-# 
-plot_model(modFull, type = "int", terms = c("OPG", "Genome_copies_gFaeces")) + theme_bw()
+d <- datMaxALL[c("OPG", "Genome_copies_gFaeces", "weightloss")]
 
+d$predicted <- predict(modFull)   # Save the predicted values
+d$residuals <- residuals(modFull) # Save the residual values
 
-ggplot(df, aes(Mouse_genotype, as.numeric(ageAtInfection), col = Mouse_genotype)) +
-  geom_segment(aes(x = Mouse_genotype, xend = Mouse_genotype,
-                   y = avg, yend = mean_age_genotype),
-               size = 0.8) +
-  geom_hline(aes(yintercept = avg), color = "gray70", size = 0.6) +
-  
-  coord_flip() +
-  geom_jitter(size = 2, alpha = 0.25, width = 0.2) +
-  geom_point(aes(Mouse_genotype, as.numeric(mean_age_genotype)), size = 5) 
-
-
+#https://drsimonj.svbtle.com/visualising-residuals
+pdf(file = "fig/plotResidAlice_temp.pdf", width = 8, height = 5)
+d %>% 
+  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
+  ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(color = residuals)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicted), shape = 1) +
+  facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
+  theme_bw()
+dev.off()
 
 # relative importance of predictors
 library(relaimpo)
@@ -134,7 +127,6 @@ calc.relimp(modminusInter, rela=TRUE)
 # The total proportion of variance explained by the model with all two predictors is 59.53%. 
 # OPG contributed to 13%, and DNA for 46%. After normalisation, we found that the proportion of contribution of each predictor to the overall 
 # R2 is 78% for DNA, and 22% for OPG. 
-
 
 #For two predictors, after we get their relative importance measured by R2
 #, we might want to test whether one predictor is significantly more important than the other. However, unlike t-test, it is rather difficult to find an analytical test statistic for a test. Instead, bootstrap can be used. The package relaimpo includes two functions -- boot.relimp() and booteval.relimp() -- for the task.  The first function conducts the bootstrap and the second one gets the confidence intervals.
