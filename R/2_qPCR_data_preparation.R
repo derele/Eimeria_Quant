@@ -219,8 +219,8 @@ data.std.lm%>%
   theme(text = element_text(size=20), legend.position= "top")+
   annotation_logticks(sides = "bl")-> D
 
-##Model 11: Genome copies modeled by Oocyst count, parasite and cycle 
-lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Parasite+Cycler, data.std.lm)
+##Model 11: Genome copies modeled by Oocyst count and cycle 
+lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Cycler, data.std.lm)
 
 ### Using MODEL 8 to predict using different levels of the factor cycler
 data.std.lm$predicted<- 10^predict(lm.SCCyc)
@@ -389,7 +389,7 @@ lm.ISV<- lm(formula = log10(Genome_copies_ngDNA)~log10(Oocyst_count)+
 summary(lm.ISV)
 ##Main effect from Oocyst count and small effect from Sporulation rate
 ##Compair model 11 (perfect fit) vs model 12 
-compareLM(lm.SCOoc, lm.ISV)
+var.test(lm.SCOoc, lm.ISV)
 
 ########## Spiked samples Experiment #########
 
@@ -483,7 +483,12 @@ grid.arrange(A,B)
 rm(A,B)
 
 ##Model 13: Genome copies/ng gDNA modeled by Oocyst count, cycler and parasite as predictors
-#lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count), data = subset(data.spk.lm, Task== "Unknown"))
+x<- subset(data.spk.lm, Task== "Unknown")
+lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count+1), 
+            data = x, na.action = na.exclude)
+
+##Compair model 11 (perfect fit) vs model 13 
+var.test(lm.SCOoc, lm.spk)
 
 ######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
