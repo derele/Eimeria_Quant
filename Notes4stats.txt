@@ -1,0 +1,2 @@
+Note for potential reviewers comments:
+why the t-test (it's a t-test, just not the same as comparing means, that is produced by "summary") for each predictors are not significant (but the F-stat of the model, also in "summary", is, as well as the LRT reported in Chisq column (function "lrtest")), some clue here https://stats.stackexchange.com/questions/3549/why-is-it-possible-to-get-significant-f-statistic-p-001-but-non-significant-r). It's cool.
