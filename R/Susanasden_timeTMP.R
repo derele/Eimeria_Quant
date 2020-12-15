@@ -105,10 +105,10 @@ sdt_STdemeaned$Genome_copies_gFaeces
 
 ggplot(sdt_STdemeaned, aes(x=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), y=(OPG+max(na.omit(OPG)))))+
   geom_point(size=5, alpha=0.5)+
-  scale_y_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)",
+  scale_y_log10(name = "log10 (Oocyst per gram faeces + max) \n (Flotation)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_x_log10(name = "log10 (Genome copies per gram faeces + 1) \n (qPCR)",
+  scale_x_log10(name = "log10 (Genome copies per gram faeces + max) \n (qPCR)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   labs(tag= "C)")+
@@ -119,8 +119,6 @@ ggplot(sdt_STdemeaned, aes(x=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_g
   annotation_logticks()+
   geom_text (x = 9.9, y = 6.1, show.legend = F,
              label = paste ("Spearman's rho ="))-> C
-
-C
 
 ####OPGs modeled by Genome copies
 sdt%>%
@@ -173,17 +171,29 @@ OPG.lm=lm(weightloss~Genome_copies_gFaeces, data=sdtST)
 GC.lm=lm(weightloss~OPG, data=sdtST)
 I.lm=lm(weightloss~Genome_copies_gFaeces+OPG, data=sdtST)
 
-anova(ST.lm, GC.lm)
-anova(ST.lm, OPG.lm)
-anova(ST.lm, I.lm)
+anova(ST.lm, GC.lm, test="LRT")
+anova(ST.lm, OPG.lm, test="LRT")
+anova(ST.lm, I.lm, test="LRT")
 
+
+lrtest(ST.lm, GC.lm)
+lrtest(ST.lm, OPG.lm)
+lrtest(ST.lm, I.lm)
 summary(ST.lm)
-anova(ST.lm, int.lm)
+lrtest(ST.lm, int.lm)
 
-#plot(ST.lm)
 
-class(sdt$EH_ID)
-class(sdt$dpi)
+library(relaimpo)
+calc.relimp(I.lm)
+calc.relimp(I.lm, rela=TRUE)
+
+#jpeg("fig/DemModelDiagnostic_plots.jpeg",
+     width = 5, height = 6, units = "in", pointsize = 10,
+     res = 500)
+#par(mfrow= c(2,2))
+#plot(ST.lm) # saved as FigS_modelFit_alice.pdf
+#dev.off()
+#par(mfrow= c(1,1))
 
 # plot weight loss and genome copies
 jpeg("fig/GG_weightloss.jpeg",
@@ -208,21 +218,25 @@ dev.off()
 
 
 # plot residuals
-sdtST$predicted <- predict(ST.lm)
-sdtST$residuals <- residuals(ST.lm)
-sdtST$logGC <- log(1+sdtST$Genome_copies_gFaeces)
-library(tidyr)
+d <- sdtST[c("OPG", "Genome_copies_gFaeces", "weightloss")]
 
-sdtST %>%
-    gather(key="iv", value = "x", -logGC, -predicted, -residuals) %>%
-    ggplot(aes(x=x, y=logGC))+
-    geom_segment(aes(xend=x, yend=predicted), alpha=0.2)+
-    geom_point(aes(color=residuals))+
-    scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-    guides(color = FALSE) +
-    geom_point(aes(y = predicted), shape = 1) +
-     facet_grid(~ iv, scales = "free_x") +
-     theme_bw()
+d$predicted <- predict(ST.lm)   # Save the predicted values
+d$residuals <- residuals(ST.lm) # Save the residual values
+
+#https://drsimonj.svbtle.com/visualising-residuals
+pdf(file = "fig/residualsDemModel_temp.pdf", width = 8, height = 5)
+d %>%
+  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
+  ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(color = residuals)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicted), shape = 1) +
+  facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
+  theme_bw()
+dev.off()
+
 
 ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome variable on y-axis
     geom_segment(aes(xend = logGC, yend = predicted), alpha = .2) +  # alpha to fade lines
@@ -250,8 +264,6 @@ ex.f1 <- ld.f1(y=mytab$weightloss, time=mytab$dpi, subject=mytab$EH_ID, time.ord
 summary(ex.f1)
 plot(ex.f1)
 print(ex.f1)
-
-
 
 ############ Alice 1.2 question
 
