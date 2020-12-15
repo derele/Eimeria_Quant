@@ -85,6 +85,85 @@ cor.test(sdt_STdemeaned$Genome_copies_gFaeces, sdt_STdemeaned$OPG, method="spear
 cor.test (sdt$Genome_copies_gFaeces, sdt$OPG, method="spearman")
 nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG")])))
 
+nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])))
+
+
+# plotting correlations
+jpeg("fig/GG_OPG_cor.jpeg",
+     width = 5, height = 6, units = "in", pointsize = 10,
+     res = 500)
+ggplot(sdt, aes(x=log(1+Genome_copies_gFaeces), y=log(1+OPG), colour=dpi))+
+    geom_point(size=2, alpha=0.8)+
+    annotate("text", x=10, y=15, label="rho=0.72, p<0.001", hjust = "left")+
+    labs(x="Genome copies (log+1)", y="OPG (log+1)")+
+    theme_classic()
+dev.off()
+
+log10(sdt_STdemeaned$Genome_copies_gFaeces+max(na.omit(sdt_STdemeaned$Genome_copies_gFaeces)))
+
+sdt_STdemeaned$Genome_copies_gFaeces
+
+ggplot(sdt_STdemeaned, aes(x=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), y=(OPG+max(na.omit(OPG)))))+
+  geom_point(size=5, alpha=0.5)+
+  scale_y_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)",
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  scale_x_log10(name = "log10 (Genome copies per gram faeces + 1) \n (qPCR)",
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  labs(tag= "C)")+
+  theme_bw()+
+  stat_cor(label.x = 9.99,  label.y = 6.1, method = "spearman",
+           aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
+  theme(text = element_text(size=16))+
+  annotation_logticks()+
+  geom_text (x = 9.9, y = 6.1, show.legend = F,
+             label = paste ("Spearman's rho ="))-> C
+
+C
+
+####OPGs modeled by Genome copies
+sdt%>%
+  ggplot(aes(Genome_copies_gFaeces+1, OPG+1))+
+  geom_smooth(method = lm, col= "black")+
+  scale_y_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)",
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  scale_x_log10(name = "log10 (Genome copies per gram faeces + 1) \n (qPCR)",
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
+  labs(tag= "A)")+
+  theme_bw()+
+  stat_cor(label.x = 4.5,  label.y = 6, method = "spearman",
+           aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
+  theme(text = element_text(size=16))+
+  annotation_logticks()+
+  geom_text (x = 3.75, y = 6.05, show.legend = F,
+             label = paste ("Spearman's rho ="))-> A
+
+sdt%>%
+  ggplot(aes(Genome_copies_gFaeces+1, OPG+1, fill=dpi))+
+  geom_smooth(method = lm, se=FALSE, aes(Genome_copies_gFaeces+1, OPG+0.1, color=dpi))+
+  scale_y_log10(name = "log10 (Oocyst per gram faeces + max) \n (Flotation)",
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  scale_x_log10(name = "log10 (Genome copies per gram faeces + max) \n (qPCR)",
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  geom_point(shape=21, size=5) +
+  annotation_logticks()+
+  theme_bw()+
+  labs(tag= "B)")+
+  theme(text = element_text(size=16)) -> B
+
+##Figure 4# Spearman's Correlation between genome copies and OPG overall and by dpi
+pdf(file = "fig/Figure_4abc.pdf", width = 10, height = 20)
+grid.arrange(A,B,C)
+dev.off()
+
+
+
 # estimate the regression
 sdtST=na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])
 ST.lm=lm(weightloss~Genome_copies_gFaeces*OPG, data=sdtST)
@@ -108,7 +187,7 @@ class(sdt$dpi)
 
 # plot weight loss and genome copies
 jpeg("fig/GG_weightloss.jpeg",
-     width = 6, height = 5, units = "in", pointsize = 10,
+     width = 5, height = 6, units = "in", pointsize = 10,
      res = 500)
 ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
@@ -116,6 +195,17 @@ ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
     labs(x="Genome copies (log+1)", y="Weight loss")+
     theme_classic()
 dev.off()
+
+jpeg("fig/OPG_weightloss.jpeg",
+     width = 5, height = 6, units = "in", pointsize = 10,
+     res = 500)
+ggplot(sdtST, aes(x=log(1+OPG), y=weightloss))+
+    geom_point(size=2, alpha=0.8)+
+    annotate("text", x=10, y=15, label="F=3.9, p=0.05", hjust = "left")+
+    labs(x="OPG (log 1+)", y="Weight loss")+
+    theme_classic()
+dev.off()
+
 
 # plot residuals
 sdtST$predicted <- predict(ST.lm)
@@ -144,7 +234,6 @@ ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome va
 myweigh_lmft <- lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
                data=mytab)
 summary(myweigh_lmft)
-
 
 # interestingly when we include time fixed effects (controls for effects that change
 #over time and not because of ID) we don't get a significant effect for OPG and the
@@ -270,3 +359,6 @@ acf(na.omit(mtab$OPG))
 
 acf(na.omit(mtab$weightloss))
 
+##### to do:
+## stage of infection
+## residual plots for LM's for supplementary material
