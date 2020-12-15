@@ -86,16 +86,33 @@ modminusOPG = lm(weightloss ~ Genome_copies_gFaeces, data = datMaxALL)
 modminusDNA = lm(weightloss ~ OPG, data = datMaxALL)
 modminusInter = lm(weightloss ~ OPG + Genome_copies_gFaeces, data = datMaxALL)
 
+# test difference LRT or anova
+anova(modFull, modNull)
+lrtest(modFull, modNull)
+anova(modFull, modNull, test ="LRT")
+anova(modFull, modNull, test ="Chisq")
+# Homebrew log-likelihood test
+like.diff = logLik(modFull) - logLik(modNull)
+df.diff = modNull$df.residual - modFull$df.residual
+pchisq(as.numeric(like.diff) * 2, df=df.diff, lower.tail=F)
+  
+summary(modFull)
+summary(modminusInter)
+
+## Conclusion
+# anova(mod1, mod2) -> Wald test, we report a F-statistics
+# anova(mod1, mod2, test="LRT" or "Chisq") -> LRT but computed with a certain method (sum of square whatever)
+# lrtest(mod1, mod2) -> LRT computed with a second method
+# we go for lrtest and report a Chisq
+
+# Results:
 list(signifFull = lrtest(modFull, modNull),
      signifOG = lrtest(modFull, modminusOPG),
      signifDNA = lrtest(modFull, modminusDNA),
      signifInter = lrtest(modFull, modminusInter))
 
-summary(modFull)
-summary(modminusInter)
-
 par(mfrow= c(2,2))
-plot(modFull) # saved as FigS_modelFit_alice.pdf
+#plot(modFull) # saved as FigS_modelFit_alice.pdf
 par(mfrow= c(1,1))
 
 # plot prediction
