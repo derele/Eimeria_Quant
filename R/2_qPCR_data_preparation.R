@@ -66,7 +66,7 @@ num.vars2 <- c("Ct", "Ct_mean", "Sd_Ct", "Qty", "Qty_mean", "Sd_Qty", "Oocyst_co
 
 ##Information from intersample variation experiment 
 data.unk%>%
-  dplyr::select(Sample.Name, Task, Ct, Cycler, Parasite, Sample_type, Extraction, Tm, 
+  dplyr::select(Sample.Name, Task, Ct, Cycler, Parasite, Sample_type, Extraction, Tm, Qubit,
                 Oocyst_1, Oocyst_2, Oocyst_3, Oocyst_4, Oocyst_5,Oocyst_6, Oocyst_7, Oocyst_8, 
                 Sporulated, Dilution_factor, Volume, Strain)%>%
   filter(Sample_type=="Oocysts" & Task=="Unknown")%>%
