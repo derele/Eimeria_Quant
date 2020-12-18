@@ -126,12 +126,12 @@ data.std.lm%>%
 ##Ct modeled by Gene counts; data from different Cyclers
 data.std.lm%>%
   ggplot(aes(x = Ct, y = Genome_copies, color= Cycler)) +
-  geom_smooth(method = "lm", se = T) +
+  geom_smooth(method = "lm", se = F, size= 0.5) +
   guides(color = "none", size = "none") +  # Size legend also removed
   scale_y_log10("log 10 Eimeria genome copies", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
+  geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 15, fill= Cycler), color= "black", alpha= 0.25)+
   stat_cor(label.x = 25, label.y = c(8,7,6), 
            aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~")))+ # Add correlation coefficient
   stat_regline_equation(label.x = 25, label.y = c(8.5,7.5,6.5))+ # Add Regression equation lm log10(Genome_copies)~Ct+Cycler
@@ -200,7 +200,12 @@ data.std.lm%>%
   labs(tag = "B)")+
   theme_bw() +
   theme(text = element_text(size=20), legend.position= "none")+
-  annotation_logticks(sides = "l")-> B
+  annotation_logticks(sides = "l")
+
+A+
+  geom_smooth(method = "lm", se = T, color="black", size= 1.5)+
+  geom_text (x = 12, y = 3, show.legend = F,
+             label = paste ("y = 10.08 - 0.26 x \n R-squared= 0.94, p < 2.2e-16"), color="black") -> A
 
 ##Linear model Genome copies per ng modeled by Oocyst count 
 data.std.lm%>%
@@ -214,10 +219,10 @@ data.std.lm%>%
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  labs(tag = "D)")+
+  labs(tag = "C)")+
   theme_bw() +
   theme(text = element_text(size=20), legend.position= "top")+
-  annotation_logticks(sides = "bl")-> D
+  annotation_logticks(sides = "bl")-> C
 
 ##Model 11: Genome copies modeled by Oocyst count and cycle 
 lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Cycler, data.std.lm)
@@ -254,19 +259,19 @@ data.std.lm%>%
   yscale("log10")+
   stat_pvalue_manual(cycler.pwc, label = "p.adj", tip.length = 0, step.increase = 0.1) +
   labs(subtitle = get_test_label(cycler.aov, detailed = TRUE),
-       caption = get_pwc_label(cycler.pwc), tag = "C)")+
+       caption = get_pwc_label(cycler.pwc), tag = "B)")+
   theme_bw()+
   theme(text = element_text(size=20), legend.position= "top")+
   font("caption", size = 14)+
-  font("subtitle", size = 14)-> C
+  font("subtitle", size = 14)-> B
 
 ## ### Figure 1 Final Standard curves 
 #pdf(file = "fig/Figure_1.pdf", width = 15, height = 15)
-grid.arrange(A, C, B, D, widths = c(2, 2),
+grid.arrange(A, B, C, widths = c(2, 2),
 layout_matrix = rbind(c(1, 2),
-                      c(3, 4)))
+                      c(3, 3)))
 #dev.off()
-rm(A,B,C,D)
+rm(A,B,C)
 ## If it is necessary some of the previous figures could be included as supplementary  
 
 ##Mean comparison standards against NTC (Supplementary 1)
