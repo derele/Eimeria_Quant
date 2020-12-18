@@ -47,9 +47,9 @@ sdt%>%
   xlab("Day post infection")+
   geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
   scale_color_brewer(palette = "Paired")+
-  labs(tag= "A)", caption = get_pwc_label(stats.test))+
+  labs(tag= "A)")+
   theme_bw()+
-  theme(text = element_text(size=16))+
+  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")+
   annotation_logticks(sides = "l")+
   stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> A
 
@@ -91,9 +91,9 @@ sdt%>%
   xlab("Day post infection")+
   geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
   scale_color_brewer(palette = "Paired")+
-  labs(tag= "B)", caption = get_pwc_label(stats.test))+
+  labs(tag= "B)")+
   theme_bw()+
-  theme(text = element_text(size=16))+
+  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")+
   annotation_logticks(sides = "l")+
   stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> B
 
@@ -134,7 +134,7 @@ sdt%>%
   scale_color_brewer(palette = "Paired")+
   labs(tag= "C)", caption = get_pwc_label(stats.test))+
   theme_bw()+
-  theme(text = element_text(size=16))+
+  theme(text = element_text(size=16), legend.position = "none")+
   stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> C
 
 ##Figure 3# Course of Eimeria Infection in genome copies, OPG, and weight loss
