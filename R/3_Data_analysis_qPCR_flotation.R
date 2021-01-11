@@ -57,12 +57,12 @@ sdt%>%
 
 ## Oocysts
 ##Wilcoxon test (Compare mean per DPI with DPI 0 as reference)
-#sdt%>%
-#  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
-#  dplyr::select(EH_ID, dpi,OPG)%>%
-#  dplyr::arrange(EH_ID)%>%
-#  dplyr::arrange(dpi)%>% ##for comparison 
-#  dplyr::mutate(OPG= OPG+1)%>%
+sdt%>%
+  filter(dpi%in%c("0","4", "5","6", "7", "8", "9", "10"))%>%
+  dplyr::select(EH_ID, dpi,OPG)%>%
+  dplyr::arrange(EH_ID)%>%
+  dplyr::arrange(dpi)%>% ##for comparison 
+  dplyr::mutate(OPG= OPG+1)#%>% ##To check
 #  rstatix::wilcox_test(OPG ~ dpi, ref.group = "0")%>%
 #  adjust_pvalue(method = "bonferroni") %>%
 # add_significance()%>%
