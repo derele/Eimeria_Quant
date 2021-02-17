@@ -137,8 +137,8 @@ sdt%>%
   theme(text = element_text(size=16), legend.position = "none")+
   stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> C
 
-##Figure 3# Course of Eimeria Infection in genome copies, OPG, and weight loss
-#pdf(file = "fig/Figure_3.pdf", width = 10, height = 15)
+##Figure 2: Course of Eimeria Infection in genome copies, OPG, and weight loss
+#pdf(file = "fig/Figure_2.pdf", width = 10, height = 15)
 grid.arrange(A,B,C)
 #dev.off()
 rm(A,B, C)
