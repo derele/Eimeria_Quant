@@ -483,9 +483,9 @@ grid.arrange(A,B)
 #dev.off()
 rm(A,B)
 
-##Model 13: Genome copies/ng gDNA modeled by Oocyst count, cycler and parasite as predictors
+##Model 13: Genome copies modeled by Oocyst count, cycler and parasite as predictors
 x<- subset(data.spk.lm, Task== "Unknown")
-lm.spk<- lm(formula = log10(Genome_copies_ngDNA)~ log10(Oocyst_count+1), 
+lm.spk<- lm(formula = log10(Genome_copies)~ log10(Oocyst_count+1), 
             data = x, na.action = na.exclude)
 
 ##Compair model 11 (perfect fit) vs model 13 
@@ -539,7 +539,7 @@ sdt$dpi<- as.factor(sdt$dpi)
 
 sdt%>%
   dplyr::mutate(Genome_copies_ngDNA= Genome_copies_mean/50, ## copies by ng of fecal DNA considering 1uL from 50 ng/uL DNA
-                DNA_sample= Conc_DNA*30, ## Estimate total gDNA of sample
+                DNA_sample= Conc_DNA*30, ## Estimate total gDNA of sample considering 30uL of elution buffer
                 DNA_g_feces= DNA_sample/fecweight_DNA,
                 ## Transform it to ng fecal DNA by g of faeces
                 Genome_copies_gFaeces= Genome_copies_ngDNA*DNA_g_feces) -> sdt ## Estimate genome copies by g of faeces
