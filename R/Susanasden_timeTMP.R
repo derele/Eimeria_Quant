@@ -157,7 +157,9 @@ sdt%>%
 
 ##Figure 4# Spearman's Correlation between genome copies and OPG overall and by dpi
 pdf(file = "fig/Figure_4abc.pdf", width = 10, height = 20)
+
 grid.arrange(A,B,C)
+
 dev.off()
 
 
@@ -188,8 +190,8 @@ calc.relimp(I.lm)
 calc.relimp(I.lm, rela=TRUE)
 
 #jpeg("fig/DemModelDiagnostic_plots.jpeg",
-     width = 5, height = 6, units = "in", pointsize = 10,
-     res = 500)
+#     width = 5, height = 6, units = "in", pointsize = 10,
+#     res = 500)
 #par(mfrow= c(2,2))
 #plot(ST.lm) # saved as FigS_modelFit_alice.pdf
 #dev.off()
@@ -224,8 +226,8 @@ d$predicted <- predict(ST.lm)   # Save the predicted values
 d$residuals <- residuals(ST.lm) # Save the residual values
 
 #https://drsimonj.svbtle.com/visualising-residuals
-pdf(file = "fig/residualsDemModel_temp.pdf", width = 8, height = 5)
-d %>%
+
+ResDemSusana <- d %>%
   gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
   ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
   geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
@@ -235,8 +237,13 @@ d %>%
   geom_point(aes(y = predicted), shape = 1) +
   facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
   theme_bw()
+
+
+pdf(file = "fig/residualsDemModel_temp.pdf", width = 8, height = 5)
+ResDemSusana
 dev.off()
 
+saveRDS(ResDemSusana, file="fig/ResDemSusana.rds")
 
 ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome variable on y-axis
     geom_segment(aes(xend = logGC, yend = predicted), alpha = .2) +  # alpha to fade lines
