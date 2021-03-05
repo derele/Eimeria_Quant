@@ -89,15 +89,15 @@ nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])))
 
 
 # plotting correlations
-jpeg("fig/GG_OPG_cor.jpeg",
-     width = 5, height = 6, units = "in", pointsize = 10,
-     res = 500)
+#jpeg("fig/GG_OPG_cor.jpeg",
+#     width = 5, height = 6, units = "in", pointsize = 10,
+#     res = 500)
 ggplot(sdt, aes(x=log(1+Genome_copies_gFaeces), y=log(1+OPG), colour=dpi))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="rho=0.72, p<0.001", hjust = "left")+
     labs(x="Genome copies (log+1)", y="OPG (log+1)")+
     theme_classic()
-dev.off()
+#dev.off()
 
 log10(sdt_STdemeaned$Genome_copies_gFaeces+max(na.omit(sdt_STdemeaned$Genome_copies_gFaeces)))
 
@@ -156,11 +156,11 @@ sdt%>%
   theme(text = element_text(size=16)) -> B
 
 ##Figure 4# Spearman's Correlation between genome copies and OPG overall and by dpi
-pdf(file = "fig/Figure_4abc.pdf", width = 10, height = 20)
+#pdf(file = "fig/Figure_4abc.pdf", width = 10, height = 20)
 
 grid.arrange(A,B,C)
 
-dev.off()
+#dev.off()
 
 
 
@@ -198,25 +198,25 @@ calc.relimp(I.lm, rela=TRUE)
 #par(mfrow= c(1,1))
 
 # plot weight loss and genome copies
-jpeg("fig/GG_weightloss.jpeg",
-     width = 5, height = 6, units = "in", pointsize = 10,
-     res = 500)
+#jpeg("fig/GG_weightloss.jpeg",
+#     width = 5, height = 6, units = "in", pointsize = 10,
+#     res = 500)
 ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="F=25.1, p<0.001", hjust = "left")+
     labs(x="Genome copies (log+1)", y="Weight loss")+
     theme_classic()
-dev.off()
+#dev.off()
 
-jpeg("fig/OPG_weightloss.jpeg",
-     width = 5, height = 6, units = "in", pointsize = 10,
-     res = 500)
+#jpeg("fig/OPG_weightloss.jpeg",
+#     width = 5, height = 6, units = "in", pointsize = 10,
+#     res = 500)
 ggplot(sdtST, aes(x=log(1+OPG), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="F=3.9, p=0.05", hjust = "left")+
     labs(x="OPG (log 1+)", y="Weight loss")+
     theme_classic()
-dev.off()
+#dev.off()
 
 
 # plot residuals
@@ -239,9 +239,9 @@ ResDemSusana <- d %>%
   theme_bw()
 
 
-pdf(file = "fig/residualsDemModel_temp.pdf", width = 8, height = 5)
-ResDemSusana
-dev.off()
+#pdf(file = "fig/residualsDemModel_temp.pdf", width = 8, height = 5)
+#ResDemSusana
+#dev.off()
 
 saveRDS(ResDemSusana, file="fig/ResDemSusana.rds")
 
