@@ -122,7 +122,7 @@ d$predicted <- predict(modFull)   # Save the predicted values
 d$residuals <- residuals(modFull) # Save the residual values
 
 #https://drsimonj.svbtle.com/visualising-residuals
-pdf(file = "fig/plotResidAlice_temp.pdf", width = 8, height = 5)
+#pdf(file = "fig/plotResidAlice_temp.pdf", width = 8, height = 5)
 plotResidAlice_temp <- d %>% 
   gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
   ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
@@ -133,7 +133,7 @@ plotResidAlice_temp <- d %>%
   geom_point(aes(y = predicted), shape = 1) +
   facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
   theme_bw()
-dev.off()
+#dev.off()
 
 # save figure in a temp directory
 saveRDS(plotResidAlice_temp, "fig/plotResidAlice_temp.RDS")
