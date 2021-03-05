@@ -1,4 +1,4 @@
-### Code to analyse
+### Code to analyses
 ## 1) Correlation among qPCR and oocyst flotation quantification
 ### library(ggsci)
 
