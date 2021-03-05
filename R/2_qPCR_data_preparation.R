@@ -264,11 +264,11 @@ data.std.lm%>%
 lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Cycler, data.std.lm)
 
 ## ### Figure 1 Final Standard curves 
-pdf(file = "fig/Figure_1.pdf", width = 15, height = 15)
+#pdf(file = "fig/Figure_1.pdf", width = 15, height = 15)
 grid.arrange(A, B, C, widths = c(2, 2),
 layout_matrix = rbind(c(1, 2),
                       c(3, 3)))
-dev.off()
+#dev.off()
 rm(A,B,C)
 ## If it is necessary some of the previous figures could be included as supplementary  
 
