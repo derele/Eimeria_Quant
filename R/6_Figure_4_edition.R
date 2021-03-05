@@ -1,11 +1,11 @@
 ### Code to generate figure 4 based on Alice and Susi analysis
 
 if(!exists("plotResidAlice_temp.RDS")){
-  A<- readRDS("fig/plotResidAlice_temp.RDS") ## This RDS file is generated in code 4_Alice_playground_handsoff_toberemovelater.R
+  A<- readRDS("fig/plotResidAlice_temp.RDS") ## This RDS file is generated in code 4_Prediction_health_by_Max_OPG_fecDNA.R
 }
 
 if(!exists("ResDemSusana.rds")){
-  B<- readRDS("fig/ResDemSusana.rds") ## This RDS file is generated in code 5_Susanasden_timeTMP.R
+  B<- readRDS("fig/ResDemSusana.rds") ## This RDS file is generated in code 5_Prediction_health_by_OPG_fecDNA.R
 }
 
 
