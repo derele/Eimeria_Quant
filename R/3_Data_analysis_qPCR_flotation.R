@@ -169,7 +169,7 @@ DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1),
                data = sdt, na.action = na.exclude)
 summary(DNAbyOPG)
 
-sdt$residualsM1<- residuals(DNAbyOPG)
+sdt$residualsM1<- 10^rstandard(DNAbyOPG)
 
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
