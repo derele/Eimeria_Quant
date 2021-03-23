@@ -173,7 +173,7 @@ DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)*dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 ##Comparison of models
-anova(DNAbyOPG, DNAbyOPG_dpi)
+anova(DNAbyOPG, DNAbyOPG_dpi,  test="LRT")
 
 ####OPGs modeled by Genome copies 
 sdt%>%
