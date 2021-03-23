@@ -168,6 +168,24 @@ sdt%>%
 DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1),
                data = sdt, na.action = na.exclude)
 summary(DNAbyOPG)
+
+sdt$residualsM1<- residuals(DNAbyOPG)
+
+sdt%>%
+  filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
+  dplyr::select(EH_ID, dpi, residualsM1)%>%
+  dplyr::arrange(EH_ID)%>%
+  dplyr::arrange(dpi)%>% ##for comparison 
+  ggplot(aes(x= dpi, y= residualsM1))+
+  geom_boxplot()+
+  geom_point(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
+  xlab("Day post infection")+
+  scale_y_log10(name = "log10 (Genome copies per gram faeces)  \n (Residuals)")+
+  ylab(" Genome copies per gram faeces (Residuals)")+
+  labs(tag= "B)")+
+  theme_bw()+
+  theme(text = element_text(size=16), legend.position = "none")
+
 ##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
 DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)*dpi,
                    data = sdt, na.action = na.exclude)
