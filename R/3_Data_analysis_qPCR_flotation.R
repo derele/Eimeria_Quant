@@ -27,7 +27,7 @@ sdt%>%
 ##Save statistical analysis
 x <- stats.test
 x$groups<- NULL
-write.csv(x, "Tables/Genome_copies_gFaeces_DPI_Comparison.csv")
+#write.csv(x, "Tables/Genome_copies_gFaeces_DPI_Comparison.csv")
 
 ##Select just comparison against DPI 0
 stats.test%>%
@@ -114,7 +114,7 @@ sdt%>%
 ##Save statistical analysis
 x <- stats.test
 x$groups<- NULL
-write.csv(x, "Tables/Weightloss_DPI_Comparison.csv")
+#write.csv(x, "Tables/Weightloss_DPI_Comparison.csv")
 
 ##Select just comparison against DPI 0
 stats.test%>%
@@ -243,46 +243,46 @@ x$cor<- NULL
 x%>%
   arrange(dpi)-> corOPGbyDNA_DPI
 
-write.csv(corOPGbyDNA_DPI, "Tables/Q1_OPG_DNA_Correlation_DPI.csv",  row.names = F)
+#write.csv(corOPGbyDNA_DPI, "Tables/Q1_OPG_DNA_Correlation_DPI.csv",  row.names = F)
 ##Non significant correlation between measurements by DPI
 
 grid.arrange(AB, C)
 
 ###################################### Extra code ###########################################
 ## DNA as a predictor of weightloss
-sdt%>%
-   ggplot(aes(Genome_copies_gFaeces, weightloss))+
-   geom_smooth(method = lm, color= "black")+
-   scale_y_continuous(name = "Weight loss to 0 dpi")+
-   scale_x_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
-                 breaks = scales::trans_breaks("log10", function(x) 10^x),
-                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-   labs(tag= "B)")+
-   theme_bw()+
-   theme(text = element_text(size=16))
+#sdt%>%
+#   ggplot(aes(Genome_copies_gFaeces, weightloss))+
+#   geom_smooth(method = lm, color= "black")+
+#   scale_y_continuous(name = "Weight loss to 0 dpi")+
+#   scale_x_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
+#                 breaks = scales::trans_breaks("log10", function(x) 10^x),
+#                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+#   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
+#   labs(tag= "B)")+
+#   theme_bw()+
+#   theme(text = element_text(size=16))
 
 ##Model 5: Genome copies/g of feaces as predictor of weight loss 
-WlbyDNA <- lm(weightloss~log10(Genome_copies_gFaeces),
-               data = sdt, na.action = na.exclude)
-summary(WlbyDNA)
+#WlbyDNA <- lm(weightloss~log10(Genome_copies_gFaeces),
+#               data = sdt, na.action = na.exclude)
+#summary(WlbyDNA)
 ##Model 6: Genome copies/g of feaces as predictor of weight loss with DPI interaction
-WlbyDNA_dpi <- lm(weightloss~log10(Genome_copies_gFaeces)*dpi,
-                   data = sdt, na.action = na.exclude)
-summary(WlbyDNA_dpi)
+#WlbyDNA_dpi <- lm(weightloss~log10(Genome_copies_gFaeces)*dpi,
+#                   data = sdt, na.action = na.exclude)
+#summary(WlbyDNA_dpi)
 
 ##Comparison of models
-anova(WlbyDNA, WlbyDNA_dpi)
+#anova(WlbyDNA, WlbyDNA_dpi)
 
 ## OPG as a predictor of weightloss
-sdt%>%
-  ggplot(aes(OPG, weightloss))+
-  geom_smooth(method = lm, color= "black")+
-  scale_y_continuous(name = "Weight loss to 0 dpi")+
-  scale_x_log10(name = "log10 Oocysts per gram of faeces (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-  labs(tag= "B)")+
-  theme_bw()+
-  theme(text = element_text(size=16))
+#sdt%>%
+#  ggplot(aes(OPG, weightloss))+
+#  geom_smooth(method = lm, color= "black")+
+#  scale_y_continuous(name = "Weight loss to 0 dpi")+
+#  scale_x_log10(name = "log10 Oocysts per gram of faeces (Flotation)", 
+#                breaks = scales::trans_breaks("log10", function(x) 10^x),
+#                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+#  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
+#  labs(tag= "B)")+
+#  theme_bw()+
+#  theme(text = element_text(size=16))
