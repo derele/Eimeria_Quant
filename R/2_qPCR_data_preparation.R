@@ -15,6 +15,7 @@ library(rcompanion)
 library(dplyr)
 library(gridExtra)
 library(rstatix)
+library(lmtest)
 
 ##Load data
 if(!exists("sample.data")){
@@ -182,10 +183,14 @@ lm.SCInt<- lm(log10(Genome_copies)~Ct+Parasite*Cycler, data.std.lm, na.action = 
 
 ##Comparison of models 
 compareLM(lm.SC, lm.SCPar, lm.SCCyc, lm.SCAll, lm.SCInt)
-anova(lm.SC, lm.SCCyc) ##Significantly different from simplest model  
-anova(lm.SC, lm.SCAll) ##Significantly different from simplest model
-anova(lm.SCInt, lm.SCAll) ##No difference 
-anova(lm.SCCyc, lm.SCAll) ##No difference but Model with just Cycler has higher R.sq
+lrtest(lm.SC, lm.SCCyc) ##Significantly different from simplest model
+lrtest(lm.SC, lm.SCPar) ##Significantly different from simplest model
+lrtest(lm.SC, lm.SCAll) ##Significantly different from simplest model
+lrtest(lm.SC, lm.SCInt) ##Significantly different from simplest model
+lrtest(lm.SCInt, lm.SCAll) ##No difference 
+lrtest(lm.SCCyc, lm.SCPar) ##No difference but Model with just Cycler has higher R.sq
+lrtest(lm.SCCyc, lm.SCAll) ##No difference but Model with just Cycler has higher R.sq
+lrtest(lm.SCAll, lm.SCPar) ##No difference but Model with just Cycler has higher R.sq
 
 ##Model 8 fit better the data... Cycler has major impact (again confirm expectations)!
 ##Linear model (Standard curve for the rest of experiments)
@@ -241,7 +246,7 @@ data.std.lm%>%
   theme_bw()+
   theme(text = element_text(size=20), legend.position= "top")+
   font("caption", size = 14)+
-  font("subtitle", size = 14)-> B
+  font("subtitle", size = 14)
 
 ##Linear model Genome copies modeled by Oocyst count 
 data.std.lm%>%
@@ -255,21 +260,19 @@ data.std.lm%>%
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  labs(tag = "C)")+
+  labs(tag = "B)")+
   theme_bw() +
   theme(text = element_text(size=20), legend.position= "top")+
-  annotation_logticks(sides = "bl")-> C
+  annotation_logticks(sides = "bl")-> B
 
 ##Model 11: Genome copies modeled by Oocyst count and cycle 
 lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Cycler, data.std.lm)
 
 ## ### Figure 1 Final Standard curves 
-#pdf(file = "fig/Figure_1.pdf", width = 15, height = 15)
-grid.arrange(A, B, C, widths = c(2, 2),
-layout_matrix = rbind(c(1, 2),
-                      c(3, 3)))
+#pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
+grid.arrange(A, B)
 #dev.off()
-rm(A,B,C)
+rm(A,B)
 ## If it is necessary some of the previous figures could be included as supplementary  
 
 ##Mean comparison standards against NTC (Supplementary 1)
