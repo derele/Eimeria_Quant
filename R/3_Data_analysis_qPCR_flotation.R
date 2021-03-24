@@ -144,113 +144,91 @@ grid.arrange(A,B,C)
 rm(A,B, C)
 
 ### 2) Correlation among Eimeria quantification methods
+##Model 1: Genome copies/g faeces modeled by OPG
+DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1),
+               data = sdt, na.action = na.exclude)
+summary(DNAbyOPG)
+
+sdt$predictedM1 <- predict(DNAbyOPG)   # Save the predicted values
+sdt$residualsM1 <- residuals(DNAbyOPG) # Save the residual values
+
+##Plot model
 ####Genome copies modeled by OPGs 
 sdt%>%
-  ggplot(aes(OPG, Genome_copies_gFaeces))+
+  ggplot(aes(OPG+1, Genome_copies_gFaeces))+
   geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces) \n (Flotation)", 
+  scale_x_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   scale_y_log10(name = "log10 (Genome copies per gram faeces)  \n (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-  stat_cor(label.x = 4.5,  label.y = 2,method = "spearman",
-           aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
   labs(tag= "A)")+
   theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks()+
-  geom_text (x = 3.75, y = 2.05, show.legend = F,
-             label = paste ("Spearman's rho ="))-> A
+  theme(text = element_text(size=16), legend.position = "top")+
+  guides(fill = guide_legend(nrow = 1))+
+  annotation_logticks()-> A
 
-##Model 1: Genome copies/g faeces modeled by OPG
-DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1),
-               data = sdt, na.action = na.exclude)
-summary(DNAbyOPG)
-
-sdt$residualsM1<- 10^rstandard(DNAbyOPG)
-
+##Plot residuals
+##Mean residuals for plot 
 sdt%>%
+  group_by(dpi) %>% 
+  summarise(residualsM1_mean = mean(na.omit(residualsM1)))%>%
+  inner_join(sdt, by= "dpi")%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
-  dplyr::select(EH_ID, dpi, residualsM1)%>%
-  dplyr::arrange(EH_ID)%>%
+  dplyr::select(dpi, residualsM1, residualsM1_mean)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
+  mutate(residualim= 0)%>%
   ggplot(aes(x= dpi, y= residualsM1))+
-  geom_boxplot()+
-  geom_point(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
+  geom_jitter(width = 0.5, shape=21, size=2.5, aes(fill= dpi), alpha= 0.75, color= "black")+
+  geom_segment(aes(y= residualsM1_mean, yend= residualim, xend= dpi), color= "black", size= 1) +
+  geom_point(aes(x = dpi, y = residualsM1_mean), size=4)+
+  geom_rect(aes(xmin=-0.1,xmax=4.5,ymin=-Inf,ymax=Inf),alpha=0.01,fill="grey")+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
   xlab("Day post infection")+
-  scale_y_log10(name = "log10 (Genome copies per gram faeces)  \n (Residuals)")+
-  ylab(" Genome copies per gram faeces (Residuals)")+
+  scale_y_continuous(name = "Residuals\n (Genome copies per gram faeces)")+
   labs(tag= "B)")+
   theme_bw()+
-  theme(text = element_text(size=16), legend.position = "none")
+  theme(text = element_text(size=16), legend.position = "none")-> B
 
 ##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
-DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)*dpi,
+DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)+dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
-##Comparison of models
-anova(DNAbyOPG, DNAbyOPG_dpi,  test="LRT")
-
-####OPGs modeled by Genome copies 
-sdt%>%
-  ggplot(aes(Genome_copies_gFaeces+1, OPG+1))+
-  geom_smooth(method = lm, col= "black")+
-  scale_y_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_x_log10(name = "log10 (Genome copies per gram faeces + 1) \n (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-  labs(tag= "A)")+
-  theme_bw()+
-  stat_cor(label.x = 4.5,  label.y = 6, method = "spearman",
-           aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
-  theme(text = element_text(size=16))+
-  annotation_logticks()+
-  geom_text (x = 3.75, y = 6.05, show.legend = F,
-             label = paste ("Spearman's rho ="))
-
-corOPGbyDNA <-cor.test(log10(sdt$Genome_copies_gFaeces+1), log10(sdt$OPG+1),  method = "spearman")
-
-##Model 3: OPG modeled by Genome copies/g faeces
-OPGbyDNA <- lm(log10(OPG+1)~log10(Genome_copies_gFaeces),
-               data = sdt, na.action = na.exclude)
-summary(OPGbyDNA)
-##Model 4: Genome copies/g faeces modeled by OPG with DPI interaction
-OPGbyDNA_dpi <- lm(log10(OPG+1)~log10(Genome_copies_gFaeces)*dpi,
-                   data = sdt, na.action = na.exclude)
-summary(OPGbyDNA_dpi)
 
 ##Comparison of models
-anova(OPGbyDNA, OPGbyDNA_dpi)
+# test difference LRT or anova
+DNANULL<- lm(log10(Genome_copies_gFaeces)~1,
+             data = sdt, na.action = na.exclude)
 
-##Linear models by DPI
+lrtest(DNANULL, DNAbyOPG) 
+lrtest(DNANULL, DNAbyOPG_dpi) 
+lrtest(DNAbyOPG, DNAbyOPG_dpi) #--> Report this table in the results 
+
+##Plot model by DPI
 colores<- c("4"="#00BD5C", "5"= "#00C1A7", "6"= "#00BADE", "7"= "#00A6FF", 
          "8" = "#B385FF", "9"= "#EF67EB", "10" = "#FF63B6")
 
 sdt%>%
   mutate(dpi = fct_relevel(dpi, "0","1", "2", "3", "4", "5", 
                                    "6", "7", "8", "9", "10"))%>%
-  ggplot(aes(OPG, Genome_copies_gFaeces, fill=dpi))+
+  ggplot(aes(OPG+1, Genome_copies_gFaeces, fill=dpi))+
   geom_point(shape=21, size=5) +
   geom_smooth(method = lm, se=FALSE, aes(OPG, Genome_copies_gFaeces, color=dpi))+
   scale_color_manual(values = colores, guide= "none")+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces) \n (Flotation)", 
+  scale_x_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   scale_y_log10(name = "log10 (Genome copies per gram faeces) \n (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   theme_bw()+
-  labs(tag= "B)")+
-  theme(text = element_text(size=16))+
-  annotation_logticks() -> B
+  labs(tag= "C)")+
+  theme(text = element_text(size=16), legend.position = "none")+
+  annotation_logticks()-> C
 
-AB<- ggarrange(A, B, common.legend = TRUE, ncol = 1, nrow = 2)
-
+AB<- ggarrange(A, B, common.legend = TRUE, ncol = 2, nrow = 2)
 
 sdt%>% 
   nest(-dpi)%>% 
@@ -268,11 +246,7 @@ x%>%
 write.csv(corOPGbyDNA_DPI, "Tables/Q1_OPG_DNA_Correlation_DPI.csv",  row.names = F)
 ##Non significant correlation between measurements by DPI
 
-##Figure 4# Spearman's Correlation between genome copies and OPG overall and by dpi
-#pdf(file = "fig/Figure_4.pdf", width = 10, height = 15)
-grid.arrange(A,B)
-#dev.off()
-rm(A,B)
+grid.arrange(AB, C)
 
 ###################################### Extra code ###########################################
 ## DNA as a predictor of weightloss
