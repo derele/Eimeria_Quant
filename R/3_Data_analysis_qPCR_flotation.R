@@ -228,8 +228,6 @@ sdt%>%
   theme(text = element_text(size=16), legend.position = "none")+
   annotation_logticks()-> C
 
-AB<- ggarrange(A, B, common.legend = TRUE, ncol = 2, nrow = 2)
-
 sdt%>% 
   nest(-dpi)%>% 
   mutate(cor=map(data,~cor.test(log10(.x$Genome_copies_gFaeces+1), log10(.x$OPG+1), method = "sp"))) %>%
@@ -245,9 +243,6 @@ x%>%
 
 #write.csv(corOPGbyDNA_DPI, "Tables/Q1_OPG_DNA_Correlation_DPI.csv",  row.names = F)
 ##Non significant correlation between measurements by DPI
-
-grid.arrange(AB, C)
-
 ###################################### Extra code ###########################################
 ## DNA as a predictor of weightloss
 #sdt%>%
