@@ -34,7 +34,7 @@ B+
   theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")-> B
 
 ##Figure 4: Prediction of impact in health (weight loss) by Eimeria genome copies and OPG
-pdf(file = "fig/Figure_4.pdf", width = 8, height = 10)
+#pdf(file = "fig/Figure_4.pdf", width = 8, height = 10)
 grid.arrange(A,B)
-dev.off()
+#dev.off()
 rm(A,B)
