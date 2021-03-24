@@ -94,7 +94,7 @@ log10(sdt_STdemeaned$Genome_copies_gFaeces+max(na.omit(sdt_STdemeaned$Genome_cop
 sdt_STdemeaned$Genome_copies_gFaeces
 
 ggplot(sdt_STdemeaned, aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), x=(OPG+max(na.omit(OPG)))))+
-  geom_point(shape=21, size=5, alpha=0.5, aes(fill= dpi))+
+  geom_point(shape=21, size=5, alpha=0.75, aes(fill= dpi))+
   scale_x_log10(name = "log10 (Oocyst per gram faeces + max) \n (Flotation)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
@@ -103,7 +103,7 @@ ggplot(sdt_STdemeaned, aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_g
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   labs(tag= "D)")+
   theme_bw()+
-  stat_cor(label.y = 10,  label.x = 6.2, method = "spearman",
+  stat_cor(label.y = 10,  label.x = 6.22, method = "spearman",
            aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
   theme(text = element_text(size=16), legend.position = "none")+
   annotation_logticks()+
@@ -115,13 +115,13 @@ if(!exists(c("A","B", "C"))){
   source("R/3_Data_analysis_qPCR_flotation.R")
 }
 
-ggarrange(A, B, C, D, common.legend = TRUE, ncol = 2, nrow = 2)
+AB<- ggarrange(A, B, common.legend = TRUE, ncol = 2, nrow = 1)
+CD<- ggarrange(C, D, ncol = 2, nrow = 1)
 
 ##Figure 3# Genome copies predicted by OPG overall and by dpi
-#pdf(file = "fig/Figure_3.pdf", width = 10, height = 20)
-ggarrange(A, B, C, D, common.legend = TRUE, ncol = 2, nrow = 2)
+#pdf(file = "fig/Figure_3.pdf", width = 13.5, height = 10.5)
+grid.arrange(AB, CD)
 #dev.off()
-
 
 # estimate the regression
 sdtST=na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])
