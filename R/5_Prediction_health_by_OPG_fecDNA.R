@@ -89,85 +89,38 @@ nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])))
 
 
 # plotting correlations
-#jpeg("fig/GG_OPG_cor.jpeg",
-#     width = 5, height = 6, units = "in", pointsize = 10,
-#     res = 500)
-ggplot(sdt, aes(x=log(1+Genome_copies_gFaeces), y=log(1+OPG), colour=dpi))+
-    geom_point(size=2, alpha=0.8)+
-    annotate("text", x=10, y=15, label="rho=0.72, p<0.001", hjust = "left")+
-    labs(x="Genome copies (log+1)", y="OPG (log+1)")+
-    theme_classic()
-#dev.off()
-
 log10(sdt_STdemeaned$Genome_copies_gFaeces+max(na.omit(sdt_STdemeaned$Genome_copies_gFaeces)))
 
 sdt_STdemeaned$Genome_copies_gFaeces
 
 ggplot(sdt_STdemeaned, aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), x=(OPG+max(na.omit(OPG)))))+
-  geom_point(size=5, alpha=0.5)+
+  geom_point(shape=21, size=5, alpha=0.5, aes(fill= dpi))+
   scale_x_log10(name = "log10 (Oocyst per gram faeces + max) \n (Flotation)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   scale_y_log10(name = "log10 (Genome copies per gram faeces + max) \n (qPCR)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  labs(tag= "C)")+
+  labs(tag= "D)")+
   theme_bw()+
   stat_cor(label.y = 10,  label.x = 6.2, method = "spearman",
            aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
-  theme(text = element_text(size=16))+
+  theme(text = element_text(size=16), legend.position = "none")+
   annotation_logticks()+
   geom_text (y = 10, x = 6.15, show.legend = F,
-             label = paste ("Spearman's rho ="))-> C
+             label = paste ("Spearman's rho ="))-> D
 
-####OPGs modeled by Genome copies
-sdt%>%
-  ggplot(aes(OPG, Genome_copies_gFaeces))+
-  geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces) \n (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 (Genome copies per gram faeces)  \n (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-  stat_cor(label.x = 4.5,  label.y = 2,method = "spearman",
-           aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
-  labs(tag= "A)")+
-  theme_bw()+
-  theme(text = element_text(size=16))+
-  annotation_logticks()+
-  geom_text (x = 4.18, y = 2.05, show.legend = F,
-             label = paste ("Spearman's rho ="))-> A
+###Get Panel A, B and C from script 3
+if(!exists(c("A","B", "C"))){
+  source("R/3_Data_analysis_qPCR_flotation.R")
+}
 
-colores<- c("4"="#00BD5C", "5"= "#00C1A7", "6"= "#00BADE", "7"= "#00A6FF", 
-            "8" = "#B385FF", "9"= "#EF67EB", "10" = "#FF63B6")
+ggarrange(A, B, C, D, common.legend = TRUE, ncol = 2, nrow = 2)
 
-sdt%>%
-  mutate(dpi = fct_relevel(dpi, "0","1", "2", "3", "4", "5", 
-                           "6", "7", "8", "9", "10"))%>%
-  ggplot(aes(OPG, Genome_copies_gFaeces, fill=dpi))+
-  geom_point(shape=21, size=5) +
-  geom_smooth(method = lm, se=FALSE, aes(OPG, Genome_copies_gFaeces, color=dpi))+
-  scale_color_manual(values = colores, guide= "none")+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces) \n (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 (Genome copies per gram faeces) \n (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
-                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  theme_bw()+
-  labs(tag= "B)")+
-  theme(text = element_text(size=16), legend.position = "none")+
-  annotation_logticks() -> B
-
-
-ABC<- ggarrange(A, B, C, common.legend = TRUE, ncol = 1, nrow = 3)
-##Figure 4# Spearman's Correlation between genome copies and OPG overall and by dpi
+##Figure 3# Genome copies predicted by OPG overall and by dpi
 #pdf(file = "fig/Figure_3.pdf", width = 10, height = 20)
-grid.arrange(ABC)
+ggarrange(A, B, C, D, common.legend = TRUE, ncol = 2, nrow = 2)
 #dev.off()
-
 
 
 # estimate the regression
