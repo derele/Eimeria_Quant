@@ -343,6 +343,33 @@ dplyr::mutate(Oocyst_DNA= Oocyst_count*(3.8E-4))%>% ##Estimation of DNA (ng) der
   dplyr::mutate(DNA_PCR= Oocyst_DNA/30)%>% ##DNA (ng) in PCR considering 1uL from a stock of 30uL
   dplyr::mutate(Genome_copies_ngDNA= Genome_copies*DNA_PCR)-> data.unk.lm  
 
+##Model 12: Intersample variation considering Parasite, cycler and sporulation rate as predictors
+lm.ISVFull<- lm(formula = log10(Genome_copies)~log10(Oocyst_count)+
+              Parasite+Cycler+Sporulation_rate, data = data.unk.lm, na.action = na.exclude)
+summary(lm.ISVFull)
+
+lm.ISVNull<- lm(formula = log10(Genome_copies)~log10(Oocyst_count), data = data.unk.lm, na.action = na.exclude)
+summary(lm.ISVNull)
+
+lm.ISVPar<- lm(formula = log10(Genome_copies)~log10(Oocyst_count)+ Parasite, data = data.unk.lm, na.action = na.exclude)
+summary(lm.ISVPar)
+
+lm.ISVCyc<- lm(formula = log10(Genome_copies)~log10(Oocyst_count)+ Cycler, data = data.unk.lm, na.action = na.exclude)
+summary(lm.ISVCyc)
+
+lm.ISVSpo<- lm(formula = log10(Genome_copies)~log10(Oocyst_count)+ Sporulation_rate, data = data.unk.lm, na.action = na.exclude)
+summary(lm.ISVSpo)
+
+compareLM(lm.ISVFull, lm.ISVNull, lm.ISVPar, lm.ISVCyc, lm.ISVSpo)
+lrtest(lm.ISVNull, lm.ISVFull) ##Significantly different from simplest model
+lrtest(lm.ISVNull, lm.ISVPar)
+lrtest(lm.ISVNull, lm.ISVCyc)
+lrtest(lm.ISVNull, lm.ISVSpo)
+
+##Main effect from Oocyst count and small effect from Sporulation rate
+
+lm(formula = log10(Genome_copies)~log10(Oocyst_count), data = data.unk.lm, na.action = na.exclude)
+
 data.unk.lm%>%
   bind_rows(data.std.lm)-> data.unk.lm
 
@@ -388,12 +415,6 @@ data.unk.lm%>%
   theme(text = element_text(size=20),legend.position = "none")+
   labs(tag = "A)")+
   annotation_logticks(sides = "bl")-> A
-
-##Model 12: Intersample variation considering Parasite, strain, cycler and sporulation rate as predictors
-lm.ISV<- lm(formula = log10(Genome_copies)~log10(Oocyst_count)+
-              Parasite+Strain+Cycler+Sporulation_rate, data = data.unk.lm, na.action = na.exclude)
-summary(lm.ISV)
-##Main effect from Oocyst count and small effect from Sporulation rate
 
 ########## Spiked samples Experiment #########
 
