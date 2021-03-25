@@ -193,7 +193,7 @@ sdt%>%
   theme(text = element_text(size=16), legend.position = "none")-> B
 
 ##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
-DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)+dpi,
+DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)*dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 
