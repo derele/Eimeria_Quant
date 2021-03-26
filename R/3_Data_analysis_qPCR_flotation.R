@@ -19,7 +19,8 @@ sdt%>%
   dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces)%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
-  wilcox_test(Genome_copies_gFaeces ~ dpi)%>%
+  filter(!is.na(Genome_copies_gFaeces))%>%
+  wilcox_test(Genome_copies_gFaeces ~ dpi, alternative = "two.sided", ref.group = "0")%>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance()%>%
   add_xy_position(x = "dpi")-> stats.test
@@ -29,28 +30,26 @@ x <- stats.test
 x$groups<- NULL
 #write.csv(x, "Tables/Genome_copies_gFaeces_DPI_Comparison.csv")
 
-##Select just comparison against DPI 0
-stats.test%>%
-  filter(group1%in%c("0"))-> stats.test 
-
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
-  dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces)%>%
+  dplyr::select(EH_ID, dpi,OPG, Genome_copies_gFaeces, Infection)%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
-  ggplot(aes(x= dpi, y= Genome_copies_gFaeces))+
+  filter(!is.na(Genome_copies_gFaeces))%>% 
+  ggplot(aes(x= dpi, y= (Genome_copies_gFaeces)))+
   scale_y_log10("log10 Genome copies/g Faeces (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_boxplot()+
-  geom_point(shape=21, position=position_jitter(0.2), size=2.5, aes(fill= dpi), color= "black")+
+  geom_point(position=position_jitter(0.2), size=2.5, aes(shape= Infection, fill= dpi), color= "black")+
+  scale_shape_manual(values = c(21, 24))+
   xlab("Day post infection")+
   geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
-  scale_color_brewer(palette = "Paired")+
   labs(tag= "A)")+
   theme_bw()+
-  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")+
+  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "top")+
   annotation_logticks(sides = "l")+
+  guides(fill=FALSE)+
   stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> A
 
 ##Significant mean difference from day 3 and on... Basically DPI 0, 1 and 2 DNA measurments are the same!
@@ -106,7 +105,7 @@ sdt%>%
   dplyr::select(EH_ID, dpi, weightloss)%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
-  wilcox_test(weightloss ~ dpi)%>%
+  wilcox_test(weightloss ~ dpi, alternative = "two.sided", ref.group = "0")%>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance()%>%
   add_xy_position(x = "dpi")-> stats.test
@@ -115,10 +114,6 @@ sdt%>%
 x <- stats.test
 x$groups<- NULL
 #write.csv(x, "Tables/Weightloss_DPI_Comparison.csv")
-
-##Select just comparison against DPI 0
-stats.test%>%
-  filter(group1%in%c("0"))-> stats.test 
 
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
