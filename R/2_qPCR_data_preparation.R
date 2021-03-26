@@ -399,22 +399,20 @@ data.unk.lm%>%
   dplyr::select(Sample.Name,Task, Oocyst_count, Genome_copies, Genome_copies_ngDNA)%>%  
   filter(Task%in%c("Standard", "Unknown"))%>%
   ggplot(aes(x = Oocyst_count, y = Genome_copies), geom=c("point", "smooth")) +
-  scale_x_log10(name = "log10 Eimeria Oocyst count (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 Eimeria genome copies (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+ 
   geom_jitter(shape=21, position=position_jitter(0.2),
               aes(fill= Task), size= 5, color= "black", alpha= 0.5)+
   stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color="black")+
   theme_bw() +
-  theme(legend.text=element_text(size=20)) +
-  theme(legend.key.size = unit(3,"line")) +
+  labs(tag = "A)", x= "log10 *Eimeria* Oocyst count (Flotation)", y= "log10 *Eimeria* genome copies (qPCR)")+
   geom_smooth(aes(color= Task, fill= Task), method = "lm")+            
   guides(colour = guide_legend(override.aes = list(size=10))) +
-  theme(text = element_text(size=20),legend.position = "none")+
-  labs(tag = "A)")+
+  theme(text = element_text(size=20),legend.position = "none", 
+        legend.key.size = unit(3,"line"), legend.text=element_text(size=20),
+        axis.title.x = element_markdown(), axis.title.y = element_markdown())+
   annotation_logticks(sides = "bl")-> A
 
 ########## Spiked samples Experiment #########
@@ -484,22 +482,19 @@ data.spk.lm%>%
     dplyr::select(Sample.Name,Task, Oocyst_count, Genome_copies, Genome_copies_ngDNA)%>%  
     filter(Task%in%c("Standard", "Unknown"))%>%
     ggplot(aes(x = Oocyst_count, y = Genome_copies), geom=c("point", "smooth")) +
-    scale_x_log10(name = "log10 Eimeria Oocyst count (Flotation)", 
-                  breaks = scales::trans_breaks("log10", function(x) 10^x),
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-    scale_y_log10(name = "log10 Eimeria genome copies (qPCR)", 
-                  breaks = scales::trans_breaks("log10", function(x) 10^x),
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))+ 
     geom_jitter(shape=21, position=position_jitter(0.2),
                 aes(fill= Task), size= 5, color= "black", alpha= 0.5)+
     stat_summary(fun.data=mean_cl_boot, geom="pointrange", shape=16, size=0.5, color="black")+
     theme_bw() +
-    theme(legend.text=element_text(size=20)) +
-    theme(legend.key.size = unit(3,"line")) +
+    labs(tag = "B)", x= "log10 *Eimeria* Oocyst count (Flotation)", y= "log10 *Eimeria* genome copies (qPCR)")+
     geom_smooth(aes(color= Task, fill= Task), method = "lm")+            
     guides(colour = guide_legend(override.aes = list(size=10))) +
-    theme(text = element_text(size=20),legend.position = "none")+
-    labs(tag = "B)")+
+    theme(text = element_text(size=20),legend.position = "none",
+          axis.title.x = element_markdown(), axis.title.y = element_markdown())+
     annotation_logticks(sides = "bl")-> B
 
 ##Supplementary data 2: comparison between Eimeria genome copies from oocyst DNA and from fecal DNA, intersample variation 
