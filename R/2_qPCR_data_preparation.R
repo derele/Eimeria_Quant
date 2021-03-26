@@ -16,6 +16,7 @@ library(dplyr)
 library(gridExtra)
 library(rstatix)
 library(lmtest)
+library(ggtext) 
 
 ##Load data
 if(!exists("sample.data")){
@@ -129,16 +130,15 @@ data.std.lm%>%
   ggplot(aes(x = Ct, y = Genome_copies, color= Cycler)) +
   geom_smooth(method = "lm", se = F, size= 0.5) +
   guides(color = "none", size = "none") +  # Size legend also removed
-  scale_y_log10("log 10 Eimeria genome copies", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 15, fill= Cycler), color= "black", alpha= 0.25)+
   stat_cor(label.x = 25, label.y = c(8,7,6), 
            aes(label= paste(..rr.label.., ..p.label.., sep= "~`,`~")))+ # Add correlation coefficient
   stat_regline_equation(label.x = 25, label.y = c(8.5,7.5,6.5))+ # Add Regression equation lm log10(Genome_copies)~Ct+Cycler
-  labs(tag = "A)")+
+  labs(tag = "A)", y= "log 10 *Eimeria* genome copies")+ ##Make Eimeria in italics ;)
   theme_bw() +
-  theme(text = element_text(size=20), legend.position= "none")+
+  theme(text = element_text(size=20), legend.position= "none", axis.title.y = ggtext::element_markdown())+
   annotation_logticks(sides = "l")-> A
 
 ##Ct modeled by Oocyst_counts and extra predictors to be considered 
@@ -198,13 +198,12 @@ data.std.lm%>%
   ggplot(aes(x = Ct, y = Genome_copies)) +
   geom_smooth(method = "lm", se = T, color="black") +
   guides(color = "none", size = "none") +  # Size legend also removed
-  scale_y_log10("log 10 Eimeria genome copies", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  labs(tag = "B)")+
+  labs(tag = "B)", y= "log 10 *Eimeria* genome copies")+
   theme_bw() +
-  theme(text = element_text(size=20), legend.position= "none")+
+  theme(text = element_text(size=20), legend.position= "none", axis.title.y = element_markdown())+
   annotation_logticks(sides = "l")
 
 A+
@@ -253,16 +252,15 @@ data.std.lm%>%
   ggplot(aes(x = Oocyst_count, y = Genome_copies)) +
   geom_smooth(method = "lm", se = F, color= "black") +
   guides(color = "none", size = "none") +  # Size legend also removed
-  scale_x_log10("log 10 Eimeria Oocysts Count (Flotation)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10("log 10 Eimeria genome copies (qPCR)", 
-                breaks = scales::trans_breaks("log10", function(x) 10^x),
+  scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), aes(size= 20, fill= Cycler), color= "black", alpha= 0.5)+
-  labs(tag = "B)")+
+  labs(tag = "B)", x= "log 10 *Eimeria* Oocysts Count (Flotation)", y= "log 10 *Eimeria* genome copies (qPCR)")+
   theme_bw() +
-  theme(text = element_text(size=20), legend.position= "top")+
+  theme(text = element_text(size=20), legend.position= "top",
+        axis.title.x = element_markdown(), axis.title.y = element_markdown())+
   annotation_logticks(sides = "bl")-> B
 
 ##Model 11: Genome copies modeled by Oocyst count and cycle 
@@ -366,10 +364,13 @@ lrtest(lm.ISVNull, lm.ISVPar)
 lrtest(lm.ISVNull, lm.ISVCyc)
 lrtest(lm.ISVNull, lm.ISVSpo)
 
+###Obtain explained viariance per predictor in the full model
+afull<- anova(lm.ISVFull)
+afullss <- afull$"Sum Sq"
+print(cbind(afull,PctExp=afullss/sum(afullss)*100))
+
 ##Main effect from Oocyst count and small effect from Sporulation rate
-
-lm(formula = log10(Genome_copies)~log10(Oocyst_count), data = data.unk.lm, na.action = na.exclude)
-
+##Plot this model with the "perfect" model
 data.unk.lm%>%
   bind_rows(data.std.lm)-> data.unk.lm
 
