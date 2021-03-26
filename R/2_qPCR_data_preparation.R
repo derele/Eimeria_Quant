@@ -192,6 +192,7 @@ lrtest(lm.SCCyc, lm.SCPar) ##No difference but Model with just Cycler has higher
 lrtest(lm.SCCyc, lm.SCAll) ##No difference but Model with just Cycler has higher R.sq
 lrtest(lm.SCAll, lm.SCPar) ##No difference but Model with just Cycler has higher R.sq
 
+rm(lm.SC, lm.SCAll, lm.SCInt, lm.SCInt, lm.SCPar)
 ##Model 8 fit better the data... Cycler has major impact (again confirm expectations)!
 ##Linear model (Standard curve for the rest of experiments)
 data.std.lm%>%
@@ -270,7 +271,7 @@ lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Cycler, data.std.lm
 #pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
 grid.arrange(A, B)
 #dev.off()
-rm(A,B)
+rm(A,B, lm.SCOoc, cycler.aov, cycler.pwc)
 ## If it is necessary some of the previous figures could be included as supplementary  
 
 ##Mean comparison standards against NTC (Supplementary 1)
@@ -344,7 +345,7 @@ dplyr::mutate(Oocyst_DNA= Oocyst_count*(3.8E-4))%>% ##Estimation of DNA (ng) der
 ##Model 12: Intersample variation considering Parasite, cycler and sporulation rate as predictors
 lm.ISVFull<- lm(formula = log10(Genome_copies)~log10(Oocyst_count)+
               Parasite+Cycler+Sporulation_rate, data = data.unk.lm, na.action = na.exclude)
-summary(lm.ISVFull)
+summary(lm.ISVFull)#---> Supplementary Table 
 
 lm.ISVNull<- lm(formula = log10(Genome_copies)~log10(Oocyst_count), data = data.unk.lm, na.action = na.exclude)
 summary(lm.ISVNull)
@@ -367,8 +368,9 @@ lrtest(lm.ISVNull, lm.ISVSpo)
 ###Obtain explained viariance per predictor in the full model
 afull<- anova(lm.ISVFull)
 afullss <- afull$"Sum Sq"
-print(cbind(afull,PctExp=afullss/sum(afullss)*100))
+print(cbind(afull,PctExp=afullss/sum(afullss)*100)) #---> Supplementary Table 
 
+rm(lm.ISVFull, lm.ISVNull, lm.ISVPar, lm.ISVCyc, lm.ISVSpo, afull, afullss)
 ##Main effect from Oocyst count and small effect from Sporulation rate
 ##Plot this model with the "perfect" model
 data.unk.lm%>%
@@ -502,14 +504,6 @@ data.spk.lm%>%
 grid.arrange(A,B)
 #dev.off()
 rm(A,B)
-
-##Model 13: Genome copies modeled by Oocyst count, cycler and parasite as predictors
-x<- subset(data.spk.lm, Task== "Unknown")
-lm.spk<- lm(formula = log10(Genome_copies)~ log10(Oocyst_count+1), 
-            data = x, na.action = na.exclude)
-
-##Compair model 11 (perfect fit) vs model 13 
-var.test(lm.SCOoc, lm.spk)
 
 ######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
