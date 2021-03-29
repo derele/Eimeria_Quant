@@ -202,7 +202,7 @@ datMaxALL$Genome_copies_gFaeces
 datMaxALL$weightloss
 datMaxALL$Mouse_genotype
 
-## Test difference of resistance between mouse strains 
+## Test difference of resistance, impact on health, tolerance between mouse strains 
 modFULL_R1 <- glm.nb(OPG ~ Mouse_genotype, data = datMaxALL)
 mod0_R1 <- glm.nb(OPG ~ 1, data = datMaxALL)
 lrtest(modFULL_R1, mod0_R1)
@@ -210,6 +210,11 @@ modFULL_R2 <- glm.nb(Genome_copies_gFaeces ~ Mouse_genotype, data = datMaxALL)
 mod0_R2 <- glm.nb(Genome_copies_gFaeces ~ 1, data = datMaxALL)
 lrtest(modFULL_R2, mod0_R2)
 ## -> Difference between mouse strains detected by both measures
+
+modFULL_I <- lm(weightloss ~ Mouse_genotype, data = datMaxALL)
+mod0_I <- lm(weightloss ~ 1, data = datMaxALL)
+lrtest(modFULL_I, mod0_I)
+## -> Difference between mouse strains in impact on health
 
 modFULL_T1 <- lm(weightloss ~ 0 + OPG : Mouse_genotype, data = datMaxALL)
 mod0_T1 <- lm(weightloss ~ 0 + OPG, data = datMaxALL)
@@ -228,6 +233,10 @@ pred_R1 <- (data.frame(pred_R1$Mouse_genotype))
 pred_R2 <- ggpredict(modFULL_R2)
 pred_R2 <- (data.frame(pred_R2$Mouse_genotype))
 
+# Prediction impact on health
+pred_I <- ggpredict(modFULL_I)
+pred_I <- (data.frame(pred_I$Mouse_genotype))
+
 # Prediction tolerance
 pred_T1 <- ggpredict(modFULL_T1, terms = c("Mouse_genotype"),
                      condition = c(OPG = 1000000))  ## For a million OPG
@@ -241,12 +250,15 @@ names(pred_R1)[names(pred_R1) %in% c("predicted", "std.error","conf.low", "conf.
   paste0(c("predicted", "std.error","conf.low", "conf.high"),"_R1")
 names(pred_R2)[names(pred_R2) %in% c("predicted", "std.error","conf.low", "conf.high")]<-
   paste0(c("predicted", "std.error","conf.low", "conf.high"),"_R2")
+names(pred_I)[names(pred_I) %in% c("predicted", "std.error","conf.low", "conf.high")]<-
+  paste0(c("predicted", "std.error","conf.low", "conf.high"),"_I")
 names(pred_T1)[names(pred_T1) %in% c("predicted", "std.error","conf.low", "conf.high")]<-
   paste0(c("predicted", "std.error","conf.low", "conf.high"),"_T1")
 names(pred_T2)[names(pred_T2) %in% c("predicted", "std.error","conf.low", "conf.high")]<-
   paste0(c("predicted", "std.error","conf.low", "conf.high"),"_T2")
 
-finalplotDF <- merge(merge(merge(pred_R1,pred_R2), pred_T1, by="x"), pred_T2, by="x")
+finalplotDF <- merge(merge(merge(merge(pred_R1,pred_R2), pred_I), pred_T1, by="x"), pred_T2, by="x")
+
 names(finalplotDF)[names(finalplotDF) %in% "x"] <- "Genotype"
 finalplotDF$Genotype <- paste0(1:length(finalplotDF$Genotype), "_", finalplotDF$Genotype)
 
@@ -258,7 +270,7 @@ p1 <- ggplot(finalplotDF, aes(x = predicted_R1, y = -predicted_T1)) +
   geom_errorbar(aes(ymin = -conf.low_T1, ymax = -conf.high_T1), color = "grey") +
   geom_errorbarh(aes(xmin = conf.low_R1, xmax = conf.high_R1), color = "grey") +
   geom_point(aes(col = Genotype), size = 7, pch = 22, fill = "white")+
-  scale_x_continuous("Maximum million OPG \n (inverse of) RESISTANCE ",
+  scale_x_continuous("Maximum million OPG \n (inverse of) RESISTANCE",
                      breaks = seq(0.5,5,0.5)*1e6,
                      labels = seq(0.5,5,0.5))+
   scale_y_continuous(name = "TOLERANCE (inverse of) slope of\n maximum weight loss on maximum million OPG ")+
@@ -282,10 +294,39 @@ p2 <- ggplot(finalplotDF, aes(x = predicted_R2, y = -predicted_T2)) +
   theme_bw()+
   theme(text = element_text(size=15))
 
-library(cowplot)
-pfinal <- plot_grid(p1 + theme(legend.position = "none"), p2 + theme(legend.position = "none"), p2, 
-                    nrow = 2, rel_heights = c(2,2,1))
+p3 <- ggplot(finalplotDF, aes(x = predicted_R1, y = predicted_I)) +
+  geom_smooth(method = "lm", se = F, col = "black") +
+  geom_errorbar(aes(ymin = conf.low_I, ymax = conf.high_I), color = "grey") +
+  geom_errorbarh(aes(xmin = conf.low_R1, xmax = conf.high_R1), color = "grey") +
+  geom_point(aes(col = Genotype), size = 7, pch = 22, fill = "white")+
+  scale_x_continuous("Maximum million OPG \n (inverse of) RESISTANCE",
+                     breaks = seq(0.5,15,1)*1e6,
+                     labels = seq(0.5,15,1))+
+  scale_y_continuous(name = "Maximum relative weight loss")+
+  geom_text(aes(label=substring(Genotype, 1, 1), col = Genotype))+
+  scale_color_manual(values = mycolors) +
+  theme_bw()+
+  theme(text = element_text(size=15))
 
-pdf("fig/Supplementary_temp_new.pdf", width = 10, height = 10)
+p4 <- ggplot(finalplotDF, aes(x = predicted_R2, y = predicted_I)) +
+  geom_smooth(method = "lm", se = F, col = "black") +
+  geom_errorbar(aes(ymin = conf.low_I, ymax = conf.high_I), color = "grey") +
+  geom_errorbarh(aes(xmin = conf.low_R2, xmax = conf.high_R2), color = "grey") +
+  geom_point(aes(col = Genotype), size = 7, pch = 22, fill = "white")+
+  scale_x_continuous("Maximum billion Genome_copies_gFaeces \n (inverse of) RESISTANCE",
+                     breaks = seq(0.5,15,1)*1e9,
+                     labels = seq(0.5,15,1))+
+  scale_y_continuous(name = "Maximum relative weight loss")+
+  geom_text(aes(label=substring(Genotype, 1, 1), col = Genotype))+
+  scale_color_manual(values = mycolors) +
+  theme_bw()+
+  theme(text = element_text(size=15))
+
+library(cowplot)
+pfinal <- plot_grid(p1 + theme(legend.position = "none"), p2 + theme(legend.position = "none"), get_legend(p1),
+                    p3+ theme(legend.position = "none"), p4+ theme(legend.position = "none") , 
+                   nrow = 2, rel_widths = c(1,1,0.3,1,1))
+
+pdf("fig/Supplementary_temp_new.pdf", width = 15, height = 10)
 pfinal
 dev.off()
