@@ -294,6 +294,7 @@ p2 <- ggplot(finalplotDF, aes(x = predicted_R2, y = -predicted_T2)) +
   theme_bw()+
   theme(text = element_text(size=15))
 
+cor.test(finalplotDF$predicted_R1, finalplotDF$predicted_I, method="spearman")
 p3 <- ggplot(finalplotDF, aes(x = predicted_R1, y = predicted_I)) +
   geom_smooth(method = "lm", se = F, col = "black") +
   geom_errorbar(aes(ymin = conf.low_I, ymax = conf.high_I), color = "grey") +
@@ -308,6 +309,7 @@ p3 <- ggplot(finalplotDF, aes(x = predicted_R1, y = predicted_I)) +
   theme_bw()+
   theme(text = element_text(size=15))
 
+cor.test(finalplotDF$predicted_R2, finalplotDF$predicted_I, method="spearman")
 p4 <- ggplot(finalplotDF, aes(x = predicted_R2, y = predicted_I)) +
   geom_smooth(method = "lm", se = F, col = "black") +
   geom_errorbar(aes(ymin = conf.low_I, ymax = conf.high_I), color = "grey") +
