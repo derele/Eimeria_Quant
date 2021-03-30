@@ -507,6 +507,10 @@ rm(A,B)
 
 ######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
+##Positive controls have a Tm at 74°C, and there is a second Tm higher than 80°C from an unespecific product
+##The mean Tm is at 74.9°C and sd of 2.09
+##Make all the things above Tm mena +/- 2sd negative 
+
 data.inf.exp %>% 
     dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
                                         Tm >= 80   ~ "Negative",
