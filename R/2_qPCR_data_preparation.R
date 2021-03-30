@@ -560,6 +560,11 @@ sdt%>%
 
 ##Transform to zero OPGs for DPI 1 and 2 
 sdt$OPG[sdt$dpi==1] <- 0
-sdt$OPG[sdt$dpi==2] <- 0                 
+sdt$OPG[sdt$dpi==2] <- 0  
+
+##Transform genome copies in sampes qPCR negatives to zero
+sdt%>% 
+  dplyr::mutate(Genome_copies_gFaeces = case_when(Infection == "Negative" ~ 0,
+                                                  TRUE ~ Genome_copies_gFaeces)) -> sdt 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
 rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)
