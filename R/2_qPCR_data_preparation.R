@@ -328,6 +328,20 @@ data.std%>%
                      aes(label = paste0(..method.., ", ","p=",..p.format..)),
                      label.y= 76, label.x = 6)-> Supp_2
 
+### Estimate mean Eimeria Tm
+data.std%>%
+  select(Sample.Name,Task,Std_series,Ct,Qty,Cycler,Oocyst_count,Parasite,Tm, Date)%>%
+  filter(Task%in%c("Standard"))%>%
+  filter(Cycler%in%c("BioRad"))%>%
+  select(Sample.Name,Task,Std_series,Ct,Oocyst_count,Tm)%>%
+  filter(complete.cases(.))%>%
+  dplyr::summarise(mean = mean(Tm), sd= sd(Tm), n = n())%>%
+  mutate(se = sd / sqrt(n),
+         lower.ci = mean - qt(1 - (0.05 / 2), n - 1) * se,
+         upper.ci = mean + qt(1 - (0.05 / 2), n - 1) * se)%>%
+  mutate(upper.ran = mean + (2*sd), 
+         lower.ran = mean - (2*sd))
+
 #pdf(file = "fig/Supplementary_1.pdf", width = 10, height = 15)
 grid.arrange(Supp_1, Supp_2)
 #dev.off()
@@ -507,37 +521,74 @@ rm(A,B)
 
 ######### Infection experiment data############
 ## Define real positive and negatives based on Tm 
-##Positive controls have a Tm at 74°C, and there is a second Tm higher than 80°C from an unespecific product
-##The mean Tm is at 74.9°C and sd of 2.09
-##Make all the things above Tm mena +/- 2sd negative 
 
+### Estimate mean Eimeria Tm for positive controls
+data.inf.exp%>%
+  select(Task,labels,Tm)%>%
+  filter(Task%in%c("Pos_Ctrl"))%>%
+  filter(complete.cases(.))%>%
+  mutate(Tm = as.numeric(Tm))%>%
+  slice(1,4,7,11,13)%>%
+  dplyr::summarise(mean = mean(Tm), sd= sd(Tm), n = n())%>%
+  mutate(se = sd / sqrt(n),
+         lower.ci = mean - qt(1 - (0.05 / 2), n - 1) * se,
+         upper.ci = mean + qt(1 - (0.05 / 2), n - 1) * se)%>%
+  mutate(upper.ran = mean + (2*sd), 
+         lower.ran = mean - (2*sd))
+
+##Positive controls have a Tm at:
+#mean        sd n  se lower.ci upper.ci upper.ran lower.ran
+#74.1 0.8944272 5 0.4 72.98942 75.21058  75.88885  72.31115
+
+#there is a second Tm higher than 80°C from an unspecific product
+
+##The mean Tm is at 74.1°C and sd of 0.89
+##Make all the things below/above Tm mean +/- 2sd negative 
+##Check which samples have the three triplicates "positive"
 data.inf.exp %>% 
     dplyr::mutate(Infection = case_when(is.na(Tm)  ~ "Negative",
-                                        Tm >= 80   ~ "Negative",
-                                        Tm < 80 ~ "Positive")) -> data.inf.exp 
+                                        (Tm >= 76 | Tm <= 72.2)  ~ "Negative",
+                                        (Tm >=72.3 | Tm <= 75.9) ~ "Positive"))%>%
+  group_by(labels)%>%
+  summarise(Count.Tm= sum(Infection=="Positive"))%>%
+  dplyr::mutate(Infection = case_when(Count.Tm == 3 ~ "Positive",
+                                           Count.Tm != 3 ~ "Negative"))%>%
+  left_join(data.inf.exp, by= "labels")-> data.inf.exp 
 
 ##Estimate number of genome copies with qPCR Ct value (Model 8)
 data.inf.exp$Genome_copies<- 10^predict(lm.SCCyc, data.inf.exp)
 
-##Summarise genome copies by sample  
+##Summarize genome copies by sample  
 data.inf.exp %>%
-    select(Genome_copies,labels) %>% # select variables to summarise
+  dplyr::filter(Infection=="Positive")%>% ## Select true positives
+    select(Genome_copies,labels)%>% # select variables to summarize
     na.omit()%>%
     dplyr::group_by(labels)%>%
     dplyr::summarise_each(funs(Genome_copies_min = min, Genome_copies_q25 = quantile(., 0.25),
                                Genome_copies_median = median, Genome_copies_q75 = quantile(., 0.75), 
                                Genome_copies_max = max, Genome_copies_mean = mean, Genome_copies_sd = sd)) -> Sum.inf
-##qPCR data from 236 samples
-## Tm values were not sumarised to avoid problems in the function 
 
-##Join summirised data
-data.inf.exp<- inner_join(data.inf.exp, Sum.inf, by= "labels")
+##Summarize Tm by sample 
+data.inf.exp %>%
+  dplyr::filter(Infection=="Positive")%>%
+  dplyr::mutate(Tm = as.numeric(Tm))%>%## Select true positives
+  select(Tm,labels)%>% # select variables to summarize
+  na.omit()%>%
+  dplyr::group_by(labels)%>%
+  dplyr::summarise_each(funs(Tm_mean = mean, Tm_sd = sd))%>%
+  left_join(Sum.inf, by= "labels")-> Sum.inf
+
+##Join summarized data
+data.inf.exp<- left_join(data.inf.exp, Sum.inf, by= "labels")
 
 ##Eliminate an unprocessed sample and controls
 data.inf.exp%>%
-    select(labels, Genome_copies_mean, Infection)%>%
+  dplyr::mutate(Genome_copies = case_when((Infection=="Negative")~ 0,
+                                          TRUE~ Genome_copies))%>% ## Make Negative zero
+    select(labels, Genome_copies_mean, Tm_mean, Infection)%>%
     filter(!labels%in%c("Pos_Ctrl","Neg_Ctrl","FML"))%>% ## Replace NAs in real negative samples to 0 
     dplyr::mutate(Genome_copies_mean= replace_na(Genome_copies_mean, 0))%>%
+    dplyr::mutate(Tm_mean= replace_na(Tm_mean, 0))%>%
     ##Get unique labels from qPCR data
     distinct(labels, .keep_all = TRUE)-> data.inf.exp
 
@@ -546,7 +597,7 @@ data.inf.exp%>%
 setdiff(sample.data$labels, data.inf.exp$labels)
 
 ##Samples MTU, FJL, EHM, DRT, CEY were not taken 
-##Sample CPY was taken but not extracted (Faeces not found in boxes)
+##Sample CPY was taken but not extracted (Feces not found in boxes)
 ##Sample FLM was collected and extracted but not processed for qPCR (DNA not found)
 ##We end with 235 samples out of the original 242
 
@@ -566,9 +617,5 @@ sdt%>%
 sdt$OPG[sdt$dpi==1] <- 0
 sdt$OPG[sdt$dpi==2] <- 0  
 
-##Transform genome copies in sampes qPCR negatives to zero
-sdt%>% 
-  dplyr::mutate(Genome_copies_gFaeces = case_when(Infection == "Negative" ~ 0,
-                                                  TRUE ~ Genome_copies_gFaeces)) -> sdt 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
 rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)
