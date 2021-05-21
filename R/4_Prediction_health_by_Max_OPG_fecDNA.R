@@ -89,10 +89,10 @@ modminusDNA = lm(weightloss ~ OPG, data = datMaxALL)
 modminusInter = lm(weightloss ~ OPG + Genome_copies_gFaeces, data = datMaxALL)
 
 # test difference LRT or anova
-anova(modFull, modNull)
-lrtest(modFull, modNull)
-anova(modFull, modNull, test ="LRT")
-anova(modFull, modNull, test ="Chisq")
+anova(modNull, modFull)
+lrtest(modNull, modFull)
+anova(modNull, modFull, test ="LRT")
+anova(modNull, modFull, test ="Chisq")
 # Homebrew log-likelihood test
 like.diff = logLik(modFull) - logLik(modNull)
 df.diff = modNull$df.residual - modFull$df.residual
