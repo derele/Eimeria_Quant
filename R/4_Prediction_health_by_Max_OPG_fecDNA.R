@@ -329,6 +329,6 @@ pfinal <- plot_grid(p1 + theme(legend.position = "none"), p2 + theme(legend.posi
                     p3+ theme(legend.position = "none"), p4+ theme(legend.position = "none") , 
                    nrow = 2, rel_widths = c(1,1,0.3,1,1))
 
-pdf("fig/Supplementary_temp_new.pdf", width = 15, height = 10)
+#pdf("fig/Supplementary_temp_new.pdf", width = 15, height = 10)
 pfinal
-dev.off()
+#dev.off()
