@@ -29,6 +29,9 @@ sdt%>%
 x <- stats.test
 x$groups<- NULL
 #write.csv(x, "Tables/Genome_copies_gFaeces_DPI_Comparison.csv")
+stats.test%>%
+  dplyr::mutate(y.position = log10(y.position))%>%
+  dplyr::mutate(dpi = c("1","2","3","4", "5","6", "7", "8", "9", "10"))-> stats.test
 
 sdt%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
@@ -36,8 +39,9 @@ sdt%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
   filter(!is.na(Genome_copies_gFaeces))%>% 
-  ggplot(aes(x= dpi, y= (Genome_copies_gFaeces)))+
-  scale_y_log10("log10 Genome copies/g Faeces (qPCR)", 
+  #filter(Genome_copies_gFaeces!=0)%>% 
+  ggplot(aes(x= dpi, y= Genome_copies_gFaeces+1))+
+  scale_y_log10("log10 Genome copies/g Faeces + 1 (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_boxplot()+
@@ -50,9 +54,9 @@ sdt%>%
   theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "top")+
   annotation_logticks(sides = "l")+
   guides(fill=FALSE)+
-  stat_compare_means(label= "p.signif", method = "wilcox.test", ref.group = "0", paired = F, na.rm = TRUE)-> A
+  stat_pvalue_manual(stats.test, label= "p.adj.signif", x= "dpi", y.position = 100000000000)-> A
 
-##Significant mean difference from day 3 and on... Basically DPI 0, 1 and 2 DNA measurments are the same!
+##Significant mean difference from DPI 2!!!!! not all samples but some sowed signal!!!!
 
 ## Oocysts
 ##Wilcoxon test (Compare mean per DPI with DPI 0 as reference)
@@ -79,7 +83,7 @@ sdt%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
   ggplot(aes(x= dpi, y= OPG+1))+
-  scale_y_log10("log10 (Oocyst per gram faeces + 1) (Flotation)", 
+  scale_y_log10("log10 Oocyst/g Faeces + 1 (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_boxplot()+
