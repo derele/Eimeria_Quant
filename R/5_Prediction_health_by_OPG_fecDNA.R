@@ -95,10 +95,10 @@ sdt_STdemeaned$Genome_copies_gFaeces
 
 ggplot(sdt_STdemeaned, aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), x=(OPG+max(na.omit(OPG)))))+
   geom_point(shape=21, size=5, alpha=0.75, aes(fill= dpi))+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces + max) \n (Flotation)",
+  scale_x_log10(name = "log10 (Oocyst/g Faeces + max) \n (Flotation)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 (Genome copies per gram faeces + max) \n (qPCR)",
+  scale_y_log10(name = "log10 (Genome copies/g Faeces + max) \n (qPCR)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   labs(tag= "D)")+

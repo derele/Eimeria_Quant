@@ -49,7 +49,7 @@ sdt%>%
   scale_shape_manual(values = c(21, 24))+
   xlab("Day post infection")+
   geom_line(aes(group = EH_ID), color= "gray", alpha= 0.5)+
-  labs(tag= "A)")+
+  labs(tag= "A)", shape= "qPCR status (Melting curve)")+
   theme_bw()+
   theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "top")+
   annotation_logticks(sides = "l")+
@@ -183,13 +183,13 @@ sdt%>%
   geom_rect(aes(xmin=-0.1,xmax=4.5,ymin=-Inf,ymax=Inf),alpha=0.01,fill="grey")+
   geom_hline(yintercept=0, linetype="dashed", color = "black")+
   xlab("Day post infection")+
-  scale_y_continuous(name = "Residuals\n (Genome copies per gram faeces)")+
+  scale_y_continuous(name = "Residuals\n (Genome copies/g Faeces)")+
   labs(tag= "B)")+
   theme_bw()+
   theme(text = element_text(size=16), legend.position = "none")-> B
 
 ##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
-DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1)*dpi,
+DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1)+dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 
@@ -209,14 +209,14 @@ colores<- c("4"="#00BD5C", "5"= "#00C1A7", "6"= "#00BADE", "7"= "#00A6FF",
 sdt%>%
   mutate(dpi = fct_relevel(dpi, "0","1", "2", "3", "4", "5", 
                                    "6", "7", "8", "9", "10"))%>%
-  ggplot(aes(OPG+1, Genome_copies_gFaeces, fill=dpi))+
+  ggplot(aes(OPG+1, Genome_copies_gFaeces+1, fill=dpi))+
   geom_point(shape=21, size=5) +
   geom_smooth(method = lm, se=FALSE, aes(OPG, Genome_copies_gFaeces, color=dpi))+
   scale_color_manual(values = colores, guide= "none")+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)", 
+  scale_x_log10(name = "log10 (Oocyst/g Faeces + 1) \n (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 (Genome copies per gram faeces) \n (qPCR)", 
+  scale_y_log10(name = "log10 (Genome copies/g Faeces) \n (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   theme_bw()+
