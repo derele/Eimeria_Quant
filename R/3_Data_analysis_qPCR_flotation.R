@@ -41,7 +41,7 @@ sdt%>%
   filter(!is.na(Genome_copies_gFaeces))%>% 
   #filter(Genome_copies_gFaeces!=0)%>% 
   ggplot(aes(x= dpi, y= Genome_copies_gFaeces+1))+
-  scale_y_log10("log10 Genome copies/g Faeces + 1 (qPCR)", 
+  scale_y_log10("log10 (Genome copies/g Faeces + 1) (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_boxplot()+
@@ -83,7 +83,7 @@ sdt%>%
   dplyr::arrange(EH_ID)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
   ggplot(aes(x= dpi, y= OPG+1))+
-  scale_y_log10("log10 Oocyst/g Faeces + 1 (Flotation)", 
+  scale_y_log10("log10 (Oocyst/g Faeces + 1) (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_boxplot()+
@@ -137,11 +137,11 @@ sdt%>%
 #pdf(file = "fig/Figure_2.pdf", width = 10, height = 15)
 grid.arrange(A,B,C)
 #dev.off()
-rm(A,B, C)
+rm(A,B,C, x, stats.test)
 
 ### 2) Correlation among Eimeria quantification methods
 ##Model 1: Genome copies/g faeces modeled by OPG
-DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG+1),
+DNAbyOPG <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1),
                data = sdt, na.action = na.exclude)
 summary(DNAbyOPG)
 
@@ -151,12 +151,12 @@ sdt$residualsM1 <- residuals(DNAbyOPG) # Save the residual values
 ##Plot model
 ####Genome copies modeled by OPGs 
 sdt%>%
-  ggplot(aes(OPG+1, Genome_copies_gFaeces))+
+  ggplot(aes(OPG+1, Genome_copies_gFaeces+1))+
   geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 (Oocyst per gram faeces + 1) \n (Flotation)", 
+  scale_x_log10(name = "log10 (Oocyst/g Faeces + 1) \n (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 (Genome copies per gram faeces)  \n (qPCR)", 
+  scale_y_log10(name = "log10 (Genome copies/g Faeces +1)  \n (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
