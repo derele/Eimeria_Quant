@@ -188,19 +188,43 @@ sdt%>%
   theme_bw()+
   theme(text = element_text(size=16), legend.position = "none")-> B
 
-##Model 2: Genome copies/g faeces modeled by OPG with DPI interaction
+##Model 2: Genome copies/g faeces modeled by OPG without DPI interaction
 DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1)+dpi,
                    data = sdt, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 
+##Model 3: Genome copies/g faeces modeled by DPI 
+DNAbydpi <- lm(log10(Genome_copies_gFaeces+1)~dpi,
+                   data = sdt, na.action = na.exclude)
+summary(DNAbydpi)
+
+##Model 4: Genome copies/g faeces modeled by OPG with DPI interaction
+DNAbyOPGxdpi <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1)*dpi,
+                   data = sdt, na.action = na.exclude)
+summary(DNAbyOPGxdpi)
+
 ##Comparison of models
 # test difference LRT or anova
-DNANULL<- lm(log10(Genome_copies_gFaeces)~1,
+DNANULL<- lm(log10(Genome_copies_gFaeces+1)~1,
              data = sdt, na.action = na.exclude)
 
 lrtest(DNANULL, DNAbyOPG) 
 lrtest(DNANULL, DNAbyOPG_dpi) 
+lrtest(DNANULL, DNAbyOPGxdpi) 
 lrtest(DNAbyOPG, DNAbyOPG_dpi) #--> Report this table in the results 
+lrtest(DNAbyOPG, DNAbyOPGxdpi) #--> Report this table in the results 
+lrtest(DNAbyOPG_dpi, DNAbyOPGxdpi) #--> Report this table in the results 
+
+### GLMM
+require(lme4)
+require(sjPlot)
+DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces+1)~log10(OPG+1) + dpi + (1|EH_ID),
+                          data = sdt, na.action = na.exclude, REML=TRUE)
+
+summary(DNAbyOPG_dpi_glmm)
+
+plot_models(DNAbyOPG_dpi, DNAbyOPG_dpi_glmm)
+dev.off()
 
 ##Plot model by DPI
 colores<- c("4"="#00BD5C", "5"= "#00C1A7", "6"= "#00BADE", "7"= "#00A6FF", 
