@@ -68,15 +68,15 @@ datMaxALL = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype")],
 
 # Extract metrics: # what is the peak day? # what is the peak value?
 ggplot(datMaxALL, aes(x = OPG, y = Genome_copies_gFaeces)) +
-  geom_point() + theme_bw()
+  geom_point() + theme_bw() -> tmp.fig.1
 cor.test(datMaxALL$OPG, datMaxALL$Genome_copies_gFaeces, method = "spearman")
 
 ggplot(datMaxALL, aes(x = OPG, y = weightloss)) +
-  geom_point() + theme_bw()
+  geom_point() + theme_bw()-> tmp.fig.2
 cor.test(datMaxALL$OPG, datMaxALL$weightloss, method = "spearman")
 
 ggplot(datMaxALL, aes(x = Genome_copies_gFaeces, y = weightloss)) +
-  geom_point() + theme_bw()
+  geom_point() + theme_bw()-> tmp.fig.3
 cor.test(datMaxALL$Genome_copies_gFaeces, datMaxALL$weightloss, method = "spearman")
 
 # Can we predict weight loss by a combination of OPG and fecDNA?
@@ -330,5 +330,5 @@ pfinal <- plot_grid(p1 + theme(legend.position = "none"), p2 + theme(legend.posi
                    nrow = 2, rel_widths = c(1,1,0.3,1,1))
 
 #pdf("fig/Supplementary_temp_new.pdf", width = 15, height = 10)
-pfinal
+#pfinal
 #dev.off()
