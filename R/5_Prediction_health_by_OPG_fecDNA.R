@@ -1,4 +1,4 @@
-### Code to analyse
+### Code to analysis
 ## 1) Correlation among DNA quantification methods
 ## 2) Course of infection by DNA quantification method
 
@@ -15,16 +15,17 @@ library("plm")
 library("AER")
 library("nparLD")
 
-#mytab <- read.csv("tmp/temporarydataset.csv")
 
 source("R/1_Data_preparation.R")
 source("R/2_qPCR_data_preparation.R")
 
-ls()
+###Get Panel A, B and C from script 3
+if(!exists(c("A","B", "C"))){
+  source("R/3_Data_analysis_qPCR_flotation.R")
+}
 
 str(sdt)
 
-sdt$dpi=as.factor(sdt$dpi)
 ###### Question 1: Can DNA and oocyst predict weightloss & and is there an interaction between the 2?
 # 1.1 Weightloss: as a rate
 # 1.2 weightloss as the peak --> ALICE
@@ -38,29 +39,29 @@ myweight_lm <- lm(weightloss~Genome_copies_gFaeces*OPG, data=sdt)
 coeftest(myweight_lm, vcov=vcovHC, type="HC1")
 
 #### Linear regression with ID as fixed effect #######################
-# elimninates the risk of biases due to ommited factors that vary across animals but not over time
+# eliminates the risk of biases due to omitted factors that vary across animals but not over time
 # linear regression with ID as a fixed effect: reports dummy coefficients for each ID. which is annoying
+
 myweight_lmf <- lm(weightloss~Genome_copies_gFaeces*OPG + EH_ID - 1, data=sdt)
 #coeftest(myweight_lm, vcov=vcovHC, type="HC1")
 summary(myweight_lmf)
 
 #OLS to the demeaned data
-##obtain subject demeaned data
-sdt_Sdemeaned <- with(sdt, data.frame(weightloss=weightloss- ave(weightloss, EH_ID),
-                      Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, EH_ID, FUN=function(x) mean(x, na.rm=T)),
-                      OPG=OPG-ave(OPG, EH_ID, FUN=function(x) mean(x, na.rm=T)),
-                      dpi=dpi,
-                      EH_ID=EH_ID))
+##obtain subject demeaned data using non-zero dataframe 
+sdt_Sdemeaned <- with(sdt.nozero, data.frame(weightloss=weightloss- ave(weightloss, EH_ID),
+                                      Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, EH_ID, FUN=function(x) mean(x, na.rm=T)),
+                                      OPG=OPG-ave(OPG, EH_ID, FUN=function(x) mean(x, na.rm=T)),
+                                      dpi=dpi,
+                                      EH_ID=EH_ID))
 # estimate the regression
 summary(lm(weightloss~Genome_copies_gFaeces*OPG, data=sdt_Sdemeaned))
 
-# time demeaned data
-sdt_Tdemeaned <- with(sdt, data.frame(weightloss=weightloss- ave(weightloss, dpi),
+# time demeaned data using non-zero dataframe
+sdt_Tdemeaned <- with(sdt.nozero, data.frame(weightloss=weightloss- ave(weightloss, dpi),
                                          Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, dpi, FUN=function(x) mean(x, na.rm=T)),
                                          OPG=OPG-ave(OPG, dpi, FUN=function(x) mean(x, na.rm=T))))
 # estimate the regression
 summary(lm(weightloss~Genome_copies_gFaeces*OPG, data=sdt_Tdemeaned))
-
 
 #### Regression with time and ID fixed effects###################################
 # Controlling for variables that are constant across entities but vary over time
@@ -76,25 +77,17 @@ sdt_STdemeaned <- with(sdt_Sdemeaned, data.frame(weightloss=weightloss- ave(weig
                       dpi=dpi,
                       EH_ID=EH_ID))
 
-
 summary(sdt_STdemeaned)
-summary(sdt_Sdemeaned)
 
-cor.test(sdt_STdemeaned$Genome_copies_gFaeces, sdt_STdemeaned$OPG, method="spearman")
+cor.test(sdt_STdemeaned$Genome_copies_gFaeces, sdt_STdemeaned$OPG, method="spearman") #--> Reported in the plot (Fig. 3 panel D)
 
-cor.test (sdt$Genome_copies_gFaeces, sdt$OPG, method="spearman")
-nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG")])))
-
-nrow((na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])))
-
+cor.test (sdt.nozero$Genome_copies_gFaeces, sdt.nozero$OPG, method="spearman") #--> Reported in the plot (Fig. 3 panel A)
 
 # plotting correlations
-log10(sdt_STdemeaned$Genome_copies_gFaeces+max(na.omit(sdt_STdemeaned$Genome_copies_gFaeces)))
-
-sdt_STdemeaned$Genome_copies_gFaeces
-
-ggplot(sdt_STdemeaned, aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), x=(OPG+max(na.omit(OPG)))))+
+sdt_STdemeaned%>%
+  ggplot(aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_gFaeces))), x=(OPG+max(na.omit(OPG)))))+
   geom_point(shape=21, size=5, alpha=0.75, aes(fill= dpi))+
+  scale_fill_manual(values = colores, guide= "none")+
   scale_x_log10(name = "log10 (Oocyst/g Faeces + max) \n (Flotation)",
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
@@ -104,24 +97,19 @@ ggplot(sdt_STdemeaned, aes(y=(Genome_copies_gFaeces+ max(na.omit(Genome_copies_g
   labs(tag= "D)")+
   theme_bw()+
   stat_cor(label.y = 10,  label.x = 6.22, method = "spearman",
-           aes(label= paste(..r.., ..p.label.., sep= "~`,`~")))+
+           aes(label= paste("rho","'='", ..r.., ..p.label.., sep= "~` `~")))+
   theme(text = element_text(size=16), legend.position = "none")+
-  annotation_logticks()+
-  geom_text (y = 10, x = 6.15, show.legend = F,
-             label = paste ("Spearman's rho ="))-> D
+  annotation_logticks()-> D
 
-###Get Panel A, B and C from script 3
-if(!exists(c("A","B", "C"))){
-  source("R/3_Data_analysis_qPCR_flotation.R")
-}
+##To visualize it externally 
+#ggsave(filename = "Rplots.pdf", D)
 
 AB<- ggarrange(A, B, common.legend = TRUE, ncol = 2, nrow = 1)
 CD<- ggarrange(C, D, ncol = 2, nrow = 1)
 
 ##Figure 3# Genome copies predicted by OPG overall and by dpi
-#pdf(file = "fig/Figure_3.pdf", width = 13.5, height = 10.5)
-#grid.arrange(AB, CD)
-#dev.off()
+ggarrange(AB, CD, ncol = 1, nrow = 2)-> tmp.fig
+ggsave(file = "fig/Figure_3.pdf", tmp.fig, width = 13.5, height = 10.5)
 
 # estimate the regression
 sdtST=na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])

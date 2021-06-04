@@ -174,8 +174,10 @@ sdt.nozero%>%
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
   scale_fill_manual(values = colores, guide= "none")+
-  labs(tag= "A)")+
+  labs(tag= "A)", fill= "DPI")+
   theme_bw()+
+  #stat_cor(label.y = 5,  label.x = 6, method = "spearman",
+  #         aes(label= paste("rho","'='", ..r.., ..p.label.., sep= "~` `~")))+
   theme(text = element_text(size=16), legend.position = "top")+
   guides(fill = guide_legend(nrow = 1))+
   annotation_logticks()-> A
