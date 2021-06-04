@@ -108,11 +108,25 @@ AB<- ggarrange(A, B, common.legend = TRUE, ncol = 2, nrow = 1)
 CD<- ggarrange(C, D, ncol = 2, nrow = 1)
 
 ##Figure 3# Genome copies predicted by OPG overall and by dpi
-ggarrange(AB, CD, ncol = 1, nrow = 2)-> tmp.fig
-ggsave(file = "fig/Figure_3.pdf", tmp.fig, width = 13.5, height = 10.5)
+#ggarrange(AB, CD, ncol = 1, nrow = 2)-> tmp.fig
+#ggsave(file = "fig/Figure_3.pdf", tmp.fig, width = 13.5, height = 10.5)
+
+##obtain subject demeaned data using the complete dataframe 
+sdt_Sdemeaned <- with(sdt, data.frame(weightloss=weightloss- ave(weightloss, EH_ID),
+                                             Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, EH_ID, FUN=function(x) mean(x, na.rm=T)),
+                                             OPG=OPG-ave(OPG, EH_ID, FUN=function(x) mean(x, na.rm=T)),
+                                             dpi=dpi,
+                                             EH_ID=EH_ID))
+
+##obtain subject and time demeaned data using the complete dataframe 
+sdt_STdemeaned <- with(sdt_Sdemeaned, data.frame(weightloss=weightloss- ave(weightloss, dpi),
+                                                 Genome_copies_gFaeces=Genome_copies_gFaeces-ave(Genome_copies_gFaeces, dpi, FUN=function(x) mean(x, na.rm=T)),
+                                                 OPG=OPG-ave(OPG, dpi, FUN=function(x) mean(x, na.rm=T)),
+                                                 dpi=dpi,
+                                                 EH_ID=EH_ID))
 
 # estimate the regression
-sdtST=na.omit(sdt[,c("Genome_copies_gFaeces", "OPG", "weightloss")])
+sdtST=na.omit(sdt_STdemeaned[,c("Genome_copies_gFaeces", "OPG", "weightloss")])
 ST.lm=lm(weightloss~Genome_copies_gFaeces*OPG, data=sdtST)
 int.lm=lm(weightloss~1, data=sdtST)
 
@@ -125,10 +139,11 @@ anova(ST.lm, OPG.lm, test="LRT")
 anova(ST.lm, I.lm, test="LRT")
 
 
-lrtest(ST.lm, GC.lm)
-lrtest(ST.lm, OPG.lm)
-lrtest(ST.lm, I.lm)
-summary(ST.lm)
+lrtest(GC.lm, ST.lm) #--> goes to table Predicted models of host health by Eimeria DNA and oocysts in faeces (Genome copies)
+lrtest(OPG.lm, ST.lm) #--> goes to table Predicted models of host health by Eimeria DNA and oocysts in faeces (OPG)
+lrtest(I.lm, ST.lm) #--> goes to table Predicted models of host health by Eimeria DNA and oocysts in faeces (Interaction)
+summary(ST.lm) #--> goes to table Predicted models of host health by Eimeria DNA and oocysts in faeces (linear model) 
+
 lrtest(ST.lm, int.lm)
 
 
@@ -136,34 +151,18 @@ library(relaimpo)
 calc.relimp(I.lm)
 calc.relimp(I.lm, rela=TRUE)
 
-#jpeg("fig/DemModelDiagnostic_plots.jpeg",
-#     width = 5, height = 6, units = "in", pointsize = 10,
-#     res = 500)
-#par(mfrow= c(2,2))
-#plot(ST.lm) # saved as FigS_modelFit_alice.pdf
-#dev.off()
-#par(mfrow= c(1,1))
-
-# plot weight loss and genome copies
-#jpeg("fig/GG_weightloss.jpeg",
-#     width = 5, height = 6, units = "in", pointsize = 10,
-#     res = 500)
+## Preliminary plots
 ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="F=25.1, p<0.001", hjust = "left")+
     labs(x="Genome copies (log+1)", y="Weight loss")+
     theme_classic()-> tmp.fig.1
-#dev.off()
 
-#jpeg("fig/OPG_weightloss.jpeg",
-#     width = 5, height = 6, units = "in", pointsize = 10,
-#     res = 500)
 ggplot(sdtST, aes(x=log(1+OPG), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="F=3.9, p=0.05", hjust = "left")+
     labs(x="OPG (log 1+)", y="Weight loss")+
     theme_classic()-> tmp.fig.2
-#dev.off()
 
 
 # plot residuals
@@ -185,10 +184,7 @@ ResDemSusana <- d %>%
   facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
   theme_bw()
 
-
-#pdf(file = "fig/residualsDemModel_temp.pdf", width = 8, height = 5)
-#ResDemSusana
-#dev.off()
+ggsave(filename = "Rplots.pdf", ResDemSusana)
 
 saveRDS(ResDemSusana, file="fig/ResDemSusana.rds")
 
@@ -197,11 +193,6 @@ ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome va
     geom_point() +
     geom_point(aes(y = predicted), shape = 1) +
     theme_classic()-> tmp.fig.3  # Add theme for cleaner look
-
-# with lm we get the dummy variables, which is annoying
-myweigh_lmft <- lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
-               data=mytab)
-summary(myweigh_lmft)
 
 # interestingly when we include time fixed effects (controls for effects that change
 #over time and not because of ID) we don't get a significant effect for OPG and the
@@ -218,10 +209,6 @@ ex.f1 <- ld.f1(y=mytab$weightloss, time=mytab$dpi, subject=mytab$EH_ID, time.ord
 summary(ex.f1)
 plot(ex.f1)
 print(ex.f1)
-
-############ Alice 1.2 question
-
-
 
 ########################################
 #######################################
@@ -243,37 +230,6 @@ for (i in 1:nrow(mytab)){
 
 
 ##########################################
-#########################################
-######### Question 3: Are DNA and Oocyst correlated?
-# spearman correlation
-cor.test(mytab$OPG, mytab$Genome_copies_mean, method="spearman")
-
-summary(mytab$Genome_copies_mean)
-
-# time demeaned data
-
-# estimate the regression
-summary(lm(OPG~Genome_copies_gFaeces - 1, data=sdtST))
-
-#corr <- ggplot(mytab, aes(x= log(1+Genome_copies_mean), y= log(1+OPG))) +
-#    geom_point(aes(colour=factor(dpi)), size = 2, alpha=0.8)+
-#    xlab("qpcr DNA, log(+ 1)") +
-#    ylab("Oocysts, log(+ 1)") +
-#    theme_classic()
-
-#corr_t <- ggplot(mytab_td, aes(x= log(max(Genome_copies_mean, na.rm=T) + Genome_copies_mean), y= log(max(OPG) + OPG))) +
-#    geom_point(size = 2, alpha=0.8)+
-#    xlab("qpcr DNA, log(+ max)") +
-#    ylab("Oocysts, log(+ max)") +
-#    theme_classic()
-
-#corr_t
-
-#jpeg("fig/Figure_cor.jpeg",
-#     width = 6, height = 5, units = "in", pointsize = 10,
-#     res = 500)
-#ggarrange(corr, corr_t, labels = c("a", "b"))
-#dev.off()
 
 library(ggpubr)
 
