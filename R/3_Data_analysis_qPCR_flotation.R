@@ -151,6 +151,9 @@ DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG),
                data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPG)
 
+### Plot and extract estimates
+require(sjPlot)
+
 sdt.nozero$predictedM1 <- predict(DNAbyOPG)   # Save the predicted values
 sdt.nozero$residualsM1 <- residuals(DNAbyOPG) # Save the residual values
 
@@ -211,44 +214,42 @@ DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG)+dpi,
                    data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 
-##Model 3: Genome copies/g faeces modeled by DPI 
-DNAbydpi <- lm(log10(Genome_copies_gFaeces)~dpi,
-                   data = sdt.nozero, na.action = na.exclude)
-summary(DNAbydpi)
-
-##Model 4: Genome copies/g faeces modeled by OPG with DPI interaction
+##Model 3: Genome copies/g faeces modeled by OPG with DPI interaction
 DNAbyOPGxdpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG)*dpi,
                    data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPGxdpi)
 
-### Plot estimates
-plot_models(DNAbyOPGxdpi)-> tmp.fig
+### Plot and extract estimates
+sjPlot:: tab_model(DNAbyOPGxdpi, 
+                   terms = c("log10(OPG):dpi5", "log10(OPG):dpi6", "log10(OPG):dpi7", 
+                             "log10(OPG):dpi8", "log10(OPG):dpi9", "log10(OPG):dpi10"))
+
+plot_model(DNAbyOPGxdpi, terms = c("log10(OPG):dpi5", "log10(OPG):dpi6", "log10(OPG):dpi7", 
+                                   "log10(OPG):dpi8", "log10(OPG):dpi9", "log10(OPG):dpi10"))-> tmp.fig
 ggsave(filename = "Rplots.pdf", tmp.fig)
 
 ##Comparison of models
 # test difference LRT or anova
-DNANULL<- lm(log10(Genome_copies_gFaeces)~1,
-             data = sdt.nozero, na.action = na.exclude)
-
-lrtest(DNANULL, DNAbyOPG) 
-lrtest(DNANULL, DNAbyOPG_dpi) 
-lrtest(DNANULL, DNAbyOPGxdpi) 
 lrtest(DNAbyOPG, DNAbyOPG_dpi) #--> Report this table in the results 
 lrtest(DNAbyOPG, DNAbyOPGxdpi) #--> Report this table in the results 
 lrtest(DNAbyOPG_dpi, DNAbyOPGxdpi) #--> Report this table in the results 
 
-### GLMM with mouse as random factor
+###Model 4: GLMM with dpi as random factor
 require(lme4)
-require(sjPlot)
-DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces)~log10(OPG)* dpi + (1|EH_ID),
+
+DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces)~log10(OPG) + (1|dpi),
                           data = sdt.nozero, na.action = na.exclude, REML=TRUE)
 
 summary(DNAbyOPG_dpi_glmm)
+sjPlot:: tab_model(DNAbyOPG_dpi_glmm)
 
 ### Plot estimates
 plot_model(DNAbyOPG_dpi_glmm)-> tmp.fig
 ggsave(filename = "Rplots.pdf", tmp.fig)
 
+## Random effect estimates
+plot_model(DNAbyOPG_dpi_glmm, type = "re", show.values = TRUE)-> tmp.fig
+ggsave(filename = "Rplots.pdf", tmp.fig)
 ##Plot model by DPI
 sdt.nozero%>%
   mutate(dpi = fct_relevel(dpi, "0","1", "2", "3", "4", "5", 
@@ -271,13 +272,23 @@ sdt.nozero%>%
 
 ##To visualize it externally 
 #ggsave(filename = "Rplots.pdf", C)
+
 ##Extraction of coefficients by dpi
-sdt.nozero%>%
-  group_by(dpi)%>%
-  do(model = lm(log10(Genome_copies_gFaeces) ~ log10(OPG), data = .))-> fitted_models_dpi
+sdt.nozero%>% 
+  nest(-dpi)%>% 
+  mutate(cor=map(data,~lm(log10(Genome_copies_gFaeces) ~ log10(OPG), data = .))) %>%
+  mutate(tidied = map(cor, tidy)) %>% 
+  unnest(tidied, .drop = T)%>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()-> x
 
-fitted_models_dpi$model
+x$data<- NULL
+x$cor<- NULL
+x%>%
+  arrange(dpi)%>%
+  filter(term != "(Intercept)")-> fitted_models_dpi
 
+#write.csv(fitted_models_dpi, "Tables/Q1_OPG_DNA_estimates_DPI.csv",  row.names = F)
 
 sdt.nozero%>% 
   nest(-dpi)%>% 
