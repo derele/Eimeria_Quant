@@ -225,8 +225,9 @@ sjPlot:: tab_model(DNAbyOPGxdpi,
                              "log10(OPG):dpi8", "log10(OPG):dpi9", "log10(OPG):dpi10"))
 
 plot_model(DNAbyOPGxdpi, terms = c("log10(OPG):dpi5", "log10(OPG):dpi6", "log10(OPG):dpi7", 
-                                   "log10(OPG):dpi8", "log10(OPG):dpi9", "log10(OPG):dpi10"))-> tmp.fig
-ggsave(filename = "Rplots.pdf", tmp.fig)
+                                   "log10(OPG):dpi8", "log10(OPG):dpi9", "log10(OPG):dpi10"))-> tmp.fig.1
+
+#ggsave(filename = "Rplots.pdf", tmp.fig.1)
 
 ##Comparison of models
 # test difference LRT or anova
@@ -244,12 +245,10 @@ summary(DNAbyOPG_dpi_glmm)
 sjPlot:: tab_model(DNAbyOPG_dpi_glmm)
 
 ### Plot estimates
-plot_model(DNAbyOPG_dpi_glmm)-> tmp.fig
-ggsave(filename = "Rplots.pdf", tmp.fig)
-
 ## Random effect estimates
-plot_model(DNAbyOPG_dpi_glmm, type = "re", show.values = TRUE)-> tmp.fig
-ggsave(filename = "Rplots.pdf", tmp.fig)
+plot_model(DNAbyOPG_dpi_glmm, type = "re", show.values = TRUE)-> tmp.fig.2
+#ggsave(filename = "Rplots.pdf", tmp.fig.2)
+
 ##Plot model by DPI
 sdt.nozero%>%
   mutate(dpi = fct_relevel(dpi, "0","1", "2", "3", "4", "5", 
@@ -305,41 +304,5 @@ x%>%
 
 #write.csv(corOPGbyDNA_DPI, "Tables/Q1_OPG_DNA_Correlation_DPI.csv",  row.names = F)
 ##Non significant correlation between measurements by DPI
-###################################### Extra code ###########################################
-## DNA as a predictor of weightloss
-#sdt%>%
-#   ggplot(aes(Genome_copies_gFaeces, weightloss))+
-#   geom_smooth(method = lm, color= "black")+
-#   scale_y_continuous(name = "Weight loss to 0 dpi")+
-#   scale_x_log10(name = "log10 Genome copies/g Faeces (qPCR)", 
-#                 breaks = scales::trans_breaks("log10", function(x) 10^x),
-#                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-#   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-#   labs(tag= "B)")+
-#   theme_bw()+
-#   theme(text = element_text(size=16))
 
-##Model 5: Genome copies/g of feaces as predictor of weight loss 
-#WlbyDNA <- lm(weightloss~log10(Genome_copies_gFaeces),
-#               data = sdt, na.action = na.exclude)
-#summary(WlbyDNA)
-##Model 6: Genome copies/g of feaces as predictor of weight loss with DPI interaction
-#WlbyDNA_dpi <- lm(weightloss~log10(Genome_copies_gFaeces)*dpi,
-#                   data = sdt, na.action = na.exclude)
-#summary(WlbyDNA_dpi)
-
-##Comparison of models
-#anova(WlbyDNA, WlbyDNA_dpi)
-
-## OPG as a predictor of weightloss
-#sdt%>%
-#  ggplot(aes(OPG, weightloss))+
-#  geom_smooth(method = lm, color= "black")+
-#  scale_y_continuous(name = "Weight loss to 0 dpi")+
-#  scale_x_log10(name = "log10 Oocysts per gram of faeces (Flotation)", 
-#                breaks = scales::trans_breaks("log10", function(x) 10^x),
-#                labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-#  geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
-#  labs(tag= "B)")+
-#  theme_bw()+
-#  theme(text = element_text(size=16))
+rm(x, tmp.fig.1, tmp.fig.2, DNAbyOPG, DNAbyOPG_dpi, DNAbyOPG_dpi_glmm, DNAbyOPGxdpi)
