@@ -8,8 +8,6 @@ if(!exists("ResDemSusana.rds")){
   B<- readRDS("fig/ResDemSusana.rds") ## This RDS file is generated in code 5_Prediction_health_by_OPG_fecDNA.R
 }
 
-
-
 ##Make tiny adjustment
 # New facet label names for supp variable
 A$data%>%
@@ -34,7 +32,10 @@ B+
   theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")-> B
 
 ##Figure 4: Prediction of impact in health (weight loss) by Eimeria genome copies and OPG
-#pdf(file = "fig/Figure_4.pdf", width = 8, height = 10)
-grid.arrange(A,B)
-#dev.off()
+#ggarrange(A,B, ncol = 1, nrow = 2)-> tmp.fig
+
+##To visualize it externally 
+#ggsave(filename = "Rplots.pdf", tmp.fig, width = 8, height = 10)
+
+#ggsave(file = "fig/Figure_4.pdf", tmp.fig, width = 8, height = 10)
 rm(A,B)
