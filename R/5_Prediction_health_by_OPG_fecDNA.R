@@ -120,7 +120,7 @@ CD<- ggarrange(C, D, ncol = 2, nrow = 1)
 
 ##Figure 3# Genome copies predicted by OPG overall and by dpi
 #pdf(file = "fig/Figure_3.pdf", width = 13.5, height = 10.5)
-grid.arrange(AB, CD)
+#grid.arrange(AB, CD)
 #dev.off()
 
 # estimate the regression
@@ -164,7 +164,7 @@ ggplot(sdtST, aes(x=log(1+Genome_copies_gFaeces), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="F=25.1, p<0.001", hjust = "left")+
     labs(x="Genome copies (log+1)", y="Weight loss")+
-    theme_classic()
+    theme_classic()-> tmp.fig.1
 #dev.off()
 
 #jpeg("fig/OPG_weightloss.jpeg",
@@ -174,7 +174,7 @@ ggplot(sdtST, aes(x=log(1+OPG), y=weightloss))+
     geom_point(size=2, alpha=0.8)+
     annotate("text", x=10, y=15, label="F=3.9, p=0.05", hjust = "left")+
     labs(x="OPG (log 1+)", y="Weight loss")+
-    theme_classic()
+    theme_classic()-> tmp.fig.2
 #dev.off()
 
 
@@ -208,7 +208,7 @@ ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome va
     geom_segment(aes(xend = logGC, yend = predicted), alpha = .2) +  # alpha to fade lines
     geom_point() +
     geom_point(aes(y = predicted), shape = 1) +
-    theme_classic()  # Add theme for cleaner look
+    theme_classic()-> tmp.fig.3  # Add theme for cleaner look
 
 # with lm we get the dummy variables, which is annoying
 myweigh_lmft <- lm(weightloss~Genome_copies_mean * OPG + EH_ID + dpi -1,
