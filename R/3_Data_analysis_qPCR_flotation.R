@@ -140,47 +140,62 @@ sdt%>%
 rm(A,B,C, x, stats.test)
 
 ### 2) Correlation among Eimeria quantification methods
+###Aiming to state a quantitative measure of the relationship between both measurements 
+###Generate a data set without samples with zero OPG counts and/or zero genome copies 
+sdt%>%
+  filter(!(OPG== 0))%>%
+  filter(!(Genome_copies_gFaeces== 0))-> sdt.nozero
+
 ##Model 1: Genome copies/g faeces modeled by OPG
-DNAbyOPG <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1),
-               data = sdt, na.action = na.exclude)
+DNAbyOPG <- lm(log10(Genome_copies_gFaeces)~log10(OPG),
+               data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPG)
 
-sdt$predictedM1 <- predict(DNAbyOPG)   # Save the predicted values
-sdt$residualsM1 <- residuals(DNAbyOPG) # Save the residual values
+sdt.nozero$predictedM1 <- predict(DNAbyOPG)   # Save the predicted values
+sdt.nozero$residualsM1 <- residuals(DNAbyOPG) # Save the residual values
 
 ##Plot model
+##Assign the colors for dpi and keep consistency with previous plots
+colores<- c("4"="#00BD5C", "5"= "#00C1A7", "6"= "#00BADE", "7"= "#00A6FF", 
+            "8" = "#B385FF", "9"= "#EF67EB", "10" = "#FF63B6")
+
 ####Genome copies modeled by OPGs 
-sdt%>%
-  ggplot(aes(OPG+1, Genome_copies_gFaeces+1))+
+sdt.nozero%>%
+  ggplot(aes(OPG, Genome_copies_gFaeces))+
   geom_smooth(method = lm, col= "black")+
-  scale_x_log10(name = "log10 (Oocyst/g Faeces + 1) \n (Flotation)", 
+  scale_x_log10(name = "log10 (Oocyst/g Faeces) \n (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
-  scale_y_log10(name = "log10 (Genome copies/g Faeces +1)  \n (qPCR)", 
+  scale_y_log10(name = "log10 (Genome copies/g Faeces)  \n (qPCR)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   geom_jitter(shape=21, position=position_jitter(0.2), size=5, aes(fill= dpi), color= "black")+
+  scale_fill_manual(values = colores, guide= "none")+
   labs(tag= "A)")+
   theme_bw()+
   theme(text = element_text(size=16), legend.position = "top")+
   guides(fill = guide_legend(nrow = 1))+
   annotation_logticks()-> A
 
+##To visualize it 
+#ggsave(filename = "Rplots.pdf", A)
+
 ##Plot residuals
 ##Mean residuals for plot 
-sdt%>%
+sdt.nozero%>%
   group_by(dpi) %>% 
   summarise(residualsM1_mean = mean(na.omit(residualsM1)))%>%
-  inner_join(sdt, by= "dpi")%>%
+  inner_join(sdt.nozero, by= "dpi")%>%
   filter(dpi%in%c("0","1","2","3","4", "5","6", "7", "8", "9", "10"))%>%
   dplyr::select(dpi, residualsM1, residualsM1_mean)%>%
   dplyr::arrange(dpi)%>% ##for comparison 
   mutate(residualim= 0)%>%
   ggplot(aes(x= dpi, y= residualsM1))+
   geom_jitter(width = 0.5, shape=21, size=2.5, aes(fill= dpi), alpha= 0.75, color= "black")+
+  scale_fill_manual(values = colores, guide= "none")+
   geom_segment(aes(y= residualsM1_mean, yend= residualim, xend= dpi), color= "black", size= 1) +
   geom_point(aes(x = dpi, y = residualsM1_mean), size=4)+
-  geom_rect(aes(xmin=-0.1,xmax=4.5,ymin=-Inf,ymax=Inf),alpha=0.01,fill="grey")+
+  #geom_rect(aes(xmin=-0.1,xmax=4.5,ymin=-Inf,ymax=Inf),alpha=0.01,fill="grey")+
   geom_hline(yintercept=0, linetype="dashed", color = "black")+
   xlab("Day post infection")+
   scale_y_continuous(name = "Residuals\n (Genome copies/g Faeces)")+
@@ -188,25 +203,28 @@ sdt%>%
   theme_bw()+
   theme(text = element_text(size=16), legend.position = "none")-> B
 
+##To visualize it externally 
+#ggsave(filename = "Rplots.pdf", B)
+
 ##Model 2: Genome copies/g faeces modeled by OPG without DPI interaction
-DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1)+dpi,
-                   data = sdt, na.action = na.exclude)
+DNAbyOPG_dpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG)+dpi,
+                   data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPG_dpi)
 
 ##Model 3: Genome copies/g faeces modeled by DPI 
-DNAbydpi <- lm(log10(Genome_copies_gFaeces+1)~dpi,
-                   data = sdt, na.action = na.exclude)
+DNAbydpi <- lm(log10(Genome_copies_gFaeces)~dpi,
+                   data = sdt.nozero, na.action = na.exclude)
 summary(DNAbydpi)
 
 ##Model 4: Genome copies/g faeces modeled by OPG with DPI interaction
-DNAbyOPGxdpi <- lm(log10(Genome_copies_gFaeces+1)~log10(OPG+1)*dpi,
-                   data = sdt, na.action = na.exclude)
+DNAbyOPGxdpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG)*dpi,
+                   data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPGxdpi)
 
 ##Comparison of models
 # test difference LRT or anova
-DNANULL<- lm(log10(Genome_copies_gFaeces+1)~1,
-             data = sdt, na.action = na.exclude)
+DNANULL<- lm(log10(Genome_copies_gFaeces)~1,
+             data = sdt.nozero, na.action = na.exclude)
 
 lrtest(DNANULL, DNAbyOPG) 
 lrtest(DNANULL, DNAbyOPG_dpi) 
@@ -215,29 +233,28 @@ lrtest(DNAbyOPG, DNAbyOPG_dpi) #--> Report this table in the results
 lrtest(DNAbyOPG, DNAbyOPGxdpi) #--> Report this table in the results 
 lrtest(DNAbyOPG_dpi, DNAbyOPGxdpi) #--> Report this table in the results 
 
-### GLMM
+### GLMM with mouse as random factor
 require(lme4)
 require(sjPlot)
-DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces+1)~log10(OPG+1) + dpi + (1|EH_ID),
-                          data = sdt, na.action = na.exclude, REML=TRUE)
+DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces)~log10(OPG) + dpi + (1|EH_ID),
+                          data = sdt.nozero, na.action = na.exclude, REML=TRUE)
 
 summary(DNAbyOPG_dpi_glmm)
 
-plot_models(DNAbyOPG_dpi, DNAbyOPG_dpi_glmm)
-dev.off()
+### Plot estimates
+plot_models(DNAbyOPG_dpi, DNAbyOPGxdpi)-> tmp.fig
+#ggsave(filename = "Rplots.pdf", tmp.fig)
 
 ##Plot model by DPI
-colores<- c("4"="#00BD5C", "5"= "#00C1A7", "6"= "#00BADE", "7"= "#00A6FF", 
-         "8" = "#B385FF", "9"= "#EF67EB", "10" = "#FF63B6")
-
-sdt%>%
+sdt.nozero%>%
   mutate(dpi = fct_relevel(dpi, "0","1", "2", "3", "4", "5", 
                                    "6", "7", "8", "9", "10"))%>%
-  ggplot(aes(OPG+1, Genome_copies_gFaeces+1, fill=dpi))+
+  ggplot(aes(OPG, Genome_copies_gFaeces, fill=dpi))+
   geom_point(shape=21, size=5) +
   geom_smooth(method = lm, se=FALSE, aes(OPG, Genome_copies_gFaeces, color=dpi))+
   scale_color_manual(values = colores, guide= "none")+
-  scale_x_log10(name = "log10 (Oocyst/g Faeces + 1) \n (Flotation)", 
+  scale_fill_manual(values = colores, guide= "none")+
+  scale_x_log10(name = "log10 (Oocyst/g Faeces) \n (Flotation)", 
                 breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x)))+
   scale_y_log10(name = "log10 (Genome copies/g Faeces) \n (qPCR)", 
@@ -248,9 +265,12 @@ sdt%>%
   theme(text = element_text(size=16), legend.position = "none")+
   annotation_logticks()-> C
 
-sdt%>% 
+##To visualize it externally 
+#ggsave(filename = "Rplots.pdf", C)
+
+sdt.nozero%>% 
   nest(-dpi)%>% 
-  mutate(cor=map(data,~cor.test(log10(.x$Genome_copies_gFaeces+1), log10(.x$OPG+1), method = "sp"))) %>%
+  mutate(cor=map(data,~cor.test(log10(.x$Genome_copies_gFaeces), log10(.x$OPG), method = "sp"))) %>%
   mutate(tidied = map(cor, tidy)) %>% 
   unnest(tidied, .drop = T)%>%
   adjust_pvalue(method = "bonferroni") %>%
