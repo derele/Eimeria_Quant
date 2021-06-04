@@ -135,7 +135,7 @@ sdt%>%
 
 ##Figure 2: Course of Eimeria Infection in genome copies, OPG, and weight loss
 #pdf(file = "fig/Figure_2.pdf", width = 10, height = 15)
-grid.arrange(A,B,C)
+#grid.arrange(A,B,C)
 #dev.off()
 rm(A,B,C, x, stats.test)
 
