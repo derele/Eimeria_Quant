@@ -123,7 +123,7 @@ data.std.lm%>%
   labs(tag = "A)")+
   theme_bw() +
   theme(text = element_text(size=20))+
-  annotation_logticks(sides = "b")
+  annotation_logticks(sides = "b") -> tmp.fig.1
 
 ##Ct modeled by Gene counts; data from different Cyclers
 data.std.lm%>%
@@ -205,7 +205,7 @@ data.std.lm%>%
   labs(tag = "B)", y= "log 10 *Eimeria* genome copies")+
   theme_bw() +
   theme(text = element_text(size=20), legend.position= "none", axis.title.y = element_markdown())+
-  annotation_logticks(sides = "l")
+  annotation_logticks(sides = "l") -> tmp.fig.2
 
 A+
   geom_smooth(method = "lm", se = T, color="black", size= 1.5)+
@@ -246,7 +246,7 @@ data.std.lm%>%
   theme_bw()+
   theme(text = element_text(size=20), legend.position= "top")+
   font("caption", size = 14)+
-  font("subtitle", size = 14)
+  font("subtitle", size = 14)-> tmp.fig.3
 
 ##Linear model Genome copies modeled by Oocyst count 
 data.std.lm%>%
@@ -269,7 +269,7 @@ lm.SCOoc<- lm(log10(Genome_copies_ngDNA)~log10(Oocyst_count)+Cycler, data.std.lm
 
 ## ### Figure 1 Final Standard curves 
 #pdf(file = "fig/Figure_1.pdf", width = 8, height = 10)
-grid.arrange(A, B)
+#grid.arrange(A, B)
 #dev.off()
 rm(A,B, lm.SCOoc, cycler.aov, cycler.pwc)
 ## If it is necessary some of the previous figures could be included as supplementary  
@@ -343,7 +343,7 @@ data.std%>%
          lower.ran = mean - (2*sd))
 
 #pdf(file = "fig/Supplementary_1.pdf", width = 10, height = 15)
-grid.arrange(Supp_1, Supp_2)
+#grid.arrange(Supp_1, Supp_2)
 #dev.off()
 rm(Supp_1, Supp_2)
 
@@ -408,7 +408,7 @@ data.unk.lm%>%
   guides(colour = guide_legend(override.aes = list(size=10))) +
   theme(text = element_text(size=20),legend.position = "none")+
   labs(tag = "A)")+
-  annotation_logticks(sides = "bl")
+  annotation_logticks(sides = "bl")-> tmp.fig.4
 
 set.seed(2020)
 data.unk.lm%>%
@@ -458,7 +458,7 @@ data.spk%>%
     stat_regline_equation(aes(color = Extraction), label.x = log10(100), label.y = log10(75000))+
     theme(text = element_text(size=20),legend.position = "none")+
     labs(tag = "A)")+
-    annotation_logticks(sides = "bl")
+    annotation_logticks(sides = "bl")-> tmp.fig.5
 
 ##All data together
 data.spk%>%
@@ -477,7 +477,7 @@ data.spk%>%
   stat_regline_equation(label.x = log10(100), label.y = log10(70000))+
   theme(text = element_text(size=20),legend.position = "none")+
   labs(tag = "A)")+
-  annotation_logticks(sides = "bl")
+  annotation_logticks(sides = "bl")-> tmp.fig.6
 
 ##Comparison between standard curve and spiked samples from ceramic bead extracted data
 data.spk%>%
@@ -515,7 +515,7 @@ data.spk.lm%>%
 
 ##Supplementary data 2: comparison between Eimeria genome copies from oocyst DNA and from fecal DNA, intersample variation 
 #pdf(file = "fig/Supplementary_2.pdf", width = 10, height = 15)
-grid.arrange(A,B)
+#grid.arrange(A,B)
 #dev.off()
 rm(A,B)
 
@@ -618,4 +618,5 @@ sdt$OPG[sdt$dpi==1] <- 0
 sdt$OPG[sdt$dpi==2] <- 0  
 
 ##Remove dataframes with data not related to the infection experiment data that won't be used in the following scripts
-rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf)
+rm(data.std, data.std.lm, data.unk, data.unk.lm, data.spk, data.spk.lm, Sum.inf, 
+   tmp.fig.1, tmp.fig.2, tmp.fig.3, tmp.fig.4, tmp.fig.5, tmp.fig.6)
