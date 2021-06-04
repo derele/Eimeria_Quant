@@ -221,6 +221,10 @@ DNAbyOPGxdpi <- lm(log10(Genome_copies_gFaeces)~log10(OPG)*dpi,
                    data = sdt.nozero, na.action = na.exclude)
 summary(DNAbyOPGxdpi)
 
+### Plot estimates
+plot_models(DNAbyOPGxdpi)-> tmp.fig
+ggsave(filename = "Rplots.pdf", tmp.fig)
+
 ##Comparison of models
 # test difference LRT or anova
 DNANULL<- lm(log10(Genome_copies_gFaeces)~1,
@@ -236,14 +240,14 @@ lrtest(DNAbyOPG_dpi, DNAbyOPGxdpi) #--> Report this table in the results
 ### GLMM with mouse as random factor
 require(lme4)
 require(sjPlot)
-DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces)~log10(OPG) + dpi + (1|EH_ID),
+DNAbyOPG_dpi_glmm <- lmer(log10(Genome_copies_gFaeces)~log10(OPG)* dpi + (1|EH_ID),
                           data = sdt.nozero, na.action = na.exclude, REML=TRUE)
 
 summary(DNAbyOPG_dpi_glmm)
 
 ### Plot estimates
-plot_models(DNAbyOPG_dpi, DNAbyOPGxdpi)-> tmp.fig
-#ggsave(filename = "Rplots.pdf", tmp.fig)
+plot_model(DNAbyOPG_dpi_glmm)-> tmp.fig
+ggsave(filename = "Rplots.pdf", tmp.fig)
 
 ##Plot model by DPI
 sdt.nozero%>%
@@ -267,6 +271,13 @@ sdt.nozero%>%
 
 ##To visualize it externally 
 #ggsave(filename = "Rplots.pdf", C)
+##Extraction of coefficients by dpi
+sdt.nozero%>%
+  group_by(dpi)%>%
+  do(model = lm(log10(Genome_copies_gFaeces) ~ log10(OPG), data = .))-> fitted_models_dpi
+
+fitted_models_dpi$model
+
 
 sdt.nozero%>% 
   nest(-dpi)%>% 
