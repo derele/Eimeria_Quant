@@ -140,15 +140,34 @@ d$dpi[d$iv %in% "OPG"] <- d$dpi_maxOPG[d$iv %in% "OPG"]
 d$dpi[d$iv %in% "Genome_copies_gFaeces"] <- d$dpi_maxDNA[d$iv %in% "Genome_copies_gFaeces"] 
 d$dpi <- as.factor(d$dpi)
 
-plotResidAlice_temp <- d %>%
+plotResidAlice_temp_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
   ggplot(aes(x = x, y = weightloss))+  # Note use of `x` here and next line
   geom_segment(aes(xend = x, yend = predicted),alpha = .2) +
   geom_point(aes(fill = dpi, alpha = abs(residuals)), size = 2.5, shape=21, col=1) +
   scale_alpha(range = c(0.1, 1), guide = F) +
   scale_fill_manual(values = colores)+
   geom_point(aes(y = predicted), shape = 1) +
-  facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
-  theme_bw()
+  xlab("Genome copies per gram of faeces")+
+  ylab("Maximum weight loss (%)") +
+  theme_bw() + 
+  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")
+plotResidAlice_temp_1
+
+plotResidAlice_temp_2 <- d[d$iv %in% "OPG",] %>%
+  ggplot(aes(x = x, y = weightloss))+  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted),alpha = .2) +
+  geom_point(aes(fill = dpi, alpha = abs(residuals)), size = 2.5, shape=21, col=1) +
+  scale_alpha(range = c(0.1, 1), guide = F) +
+  scale_fill_manual(values = colores)+
+  geom_point(aes(y = predicted), shape = 1) +
+  xlab("Oocysts per gram of faeces")+
+  ylab("Maximum weight loss (%)") +
+  theme_bw() +  
+  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")
+plotResidAlice_temp_2
+
+plotResidAlice_temp <- ggarrange(plotResidAlice_temp_1, plotResidAlice_temp_2, ncol = 2, nrow = 1, 
+          labels = c("a", "b"))
 
 # save figure in a temp directory
 saveRDS(plotResidAlice_temp, "fig/plotResidAlice_temp.RDS")
