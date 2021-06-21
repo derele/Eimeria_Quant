@@ -29,13 +29,13 @@ B+
   xlab("Measurments")+
   ylab("Weight loss relative to DPI 0 (%)")+
   labs(tag= "B)")+
-  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")-> B
+  theme(text = element_text(size=16), axis.title.x = element_blank())-> B
 
 ##Figure 4: Prediction of impact in health (weight loss) by Eimeria genome copies and OPG
-#ggarrange(A,B, ncol = 1, nrow = 2)-> tmp.fig
+ggarrange(A, B, ncol = 1, nrow = 2, common.legend = T)-> tmp.fig
 
 ##To visualize it externally 
 #ggsave(filename = "Rplots.pdf", tmp.fig, width = 8, height = 10)
 
-#ggsave(file = "fig/Figure_4.pdf", tmp.fig, width = 8, height = 10)
+ggsave(file = "fig/Figure_4_beforeLeg.pdf", tmp.fig,  width = 8, height = 10)
 rm(A,B)

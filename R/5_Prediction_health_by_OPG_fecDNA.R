@@ -15,7 +15,6 @@ library("plm")
 library("AER")
 library("nparLD")
 
-
 source("R/1_Data_preparation.R")
 source("R/2_qPCR_data_preparation.R")
 
@@ -126,7 +125,7 @@ sdt_STdemeaned <- with(sdt_Sdemeaned, data.frame(weightloss=weightloss- ave(weig
                                                  EH_ID=EH_ID))
 
 # estimate the regression
-sdtST=na.omit(sdt_STdemeaned[,c("Genome_copies_gFaeces", "OPG", "weightloss")])
+sdtST=na.omit(sdt_STdemeaned[,c("Genome_copies_gFaeces", "OPG", "weightloss", "dpi")])
 ST.lm=lm(weightloss~Genome_copies_gFaeces*OPG, data=sdtST)
 int.lm=lm(weightloss~1, data=sdtST)
 
@@ -166,20 +165,24 @@ ggplot(sdtST, aes(x=log(1+OPG), y=weightloss))+
 
 
 # plot residuals
-d <- sdtST[c("OPG", "Genome_copies_gFaeces", "weightloss")]
+d <- sdtST[c("OPG", "Genome_copies_gFaeces", "weightloss", "dpi")]
 
 d$predicted <- predict(ST.lm)   # Save the predicted values
 d$residuals <- residuals(ST.lm) # Save the residual values
 
 #https://drsimonj.svbtle.com/visualising-residuals
 
+# change: color by day of max weight loss
+d <- d %>% 
+  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals, 
+         -dpi) # Get data into shape
+d$dpi <- as.factor(d$dpi)
+
 ResDemSusana <- d %>%
-  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
   ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
   geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
-  geom_point(aes(color = residuals)) +
-  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
+  geom_point(aes(fill = dpi, alpha = abs(residuals)), size = 2.5, shape=21, col=1) +
+  scale_alpha(range = c(0.1, 1), guide = F) +
   geom_point(aes(y = predicted), shape = 1) +
   facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
   theme_bw()
