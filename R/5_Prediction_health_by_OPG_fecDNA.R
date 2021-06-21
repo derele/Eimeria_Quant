@@ -187,7 +187,7 @@ ResDemSusana_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
   xlab("Genome copies per gram of faeces")+
   ylab("Weight loss relative to DPI 0 (%)") +
   theme_bw() + 
-  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")
+  theme(text = element_text(size=16), legend.position = "none")
 
 ResDemSusana_2 <- d[d$iv %in% "OPG",] %>% 
   ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
@@ -198,7 +198,7 @@ ResDemSusana_2 <- d[d$iv %in% "OPG",] %>%
   xlab("Oocysts per gram of faeces")+
   ylab("Weight loss relative to DPI 0 (%)") +
   theme_bw() +
-  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")
+  theme(text = element_text(size=16), legend.position = "none")
 
 ResDemSusana <- ggarrange(ResDemSusana_1, ResDemSusana_2, ncol = 2, nrow = 1, 
                           labels = c("c", "d"))

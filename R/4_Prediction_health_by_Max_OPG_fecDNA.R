@@ -150,7 +150,7 @@ plotResidAlice_temp_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
   xlab("Genome copies per gram of faeces")+
   ylab("Maximum weight loss (%)") +
   theme_bw() + 
-  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")
+  theme(text = element_text(size=16), legend.position = "none")
 plotResidAlice_temp_1
 
 plotResidAlice_temp_2 <- d[d$iv %in% "OPG",] %>%
@@ -163,7 +163,7 @@ plotResidAlice_temp_2 <- d[d$iv %in% "OPG",] %>%
   xlab("Oocysts per gram of faeces")+
   ylab("Maximum weight loss (%)") +
   theme_bw() +  
-  theme(text = element_text(size=16), axis.title.x = element_blank(), legend.position = "none")
+  theme(text = element_text(size=16), legend.position = "none")
 plotResidAlice_temp_2
 
 plotResidAlice_temp <- ggarrange(plotResidAlice_temp_1, plotResidAlice_temp_2, ncol = 2, nrow = 1, 
