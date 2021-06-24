@@ -187,6 +187,7 @@ ResDemSusana_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
   xlab("Genome copies per gram of faeces")+
   ylab("Weight loss relative to DPI 0 (%)") +
   theme_bw() + 
+  labs(tag = "C)")+
   theme(text = element_text(size=16), legend.position = "none")
 
 ResDemSusana_2 <- d[d$iv %in% "OPG",] %>% 
@@ -198,12 +199,10 @@ ResDemSusana_2 <- d[d$iv %in% "OPG",] %>%
   xlab("Oocysts per gram of faeces")+
   ylab("Weight loss relative to DPI 0 (%)") +
   theme_bw() +
+  labs(tag = "D)")+
   theme(text = element_text(size=16), legend.position = "none")
 
-ResDemSusana <- ggarrange(ResDemSusana_1, ResDemSusana_2, ncol = 2, nrow = 1, 
-                          labels = c("c", "d"))
-
-ggsave(filename = "Rplots.pdf", ResDemSusana)
+ResDemSusana <- ggarrange(ResDemSusana_1, ResDemSusana_2, ncol = 2, nrow = 1)
 
 saveRDS(ResDemSusana, file="fig/ResDemSusana.rds")
 
