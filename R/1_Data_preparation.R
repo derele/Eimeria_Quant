@@ -48,13 +48,13 @@ sample.data$labels<- as.vector(sample.data$labels)
 rownames(sample.data) <- make.unique(sample.data$labels)
 
 ##Generate table 1
-sample.data%>%
-  group_by(EH_ID)%>%
-  select(EH_ID, weight_dpi0)%>%
-  distinct()%>%
-  left_join(exp.des, by= "EH_ID")%>%
-  select(EH_ID, weight_dpi0, ageAtdpi0expe1a, Sex, Locality, Genome, Strain)%>%
-  rename(Weight_at_DPI_0= weight_dpi0, Age_at_DPI_0 = ageAtdpi0expe1a)-> tmp1
+sample.data %>%
+  dplyr::group_by(EH_ID)%>%
+  dplyr:: select(EH_ID, weight_dpi0)%>%
+  dplyr::distinct()%>%
+  dplyr::left_join(exp.des, by= "EH_ID")%>%
+  dplyr::select(EH_ID, weight_dpi0, ageAtdpi0expe1a, Sex, Locality, Genome, Strain)%>%
+  dplyr::rename(Weight_at_DPI_0= weight_dpi0, Age_at_DPI_0 = ageAtdpi0expe1a)-> tmp1
 
 #write.csv(tmp1, "Tables/Table_1_Infection_cohort.csv")
 rm(tmp1)

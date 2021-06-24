@@ -46,21 +46,27 @@ myData$dpi = as.numeric(as.character(myData$dpi))
 datMaxOPG = myData %>% dplyr::group_by(EH_ID) %>%
   filter(OPG == max(OPG, na.rm = T)) %>%
   dplyr::select(EH_ID, dpi, OPG, Mouse_genotype)%>% data.frame()
+names(datMaxOPG)[names(datMaxOPG)%in% "dpi"] <- "dpi_maxOPG"
+
 table(datMaxOPG$dpi)
 # 1.2 fecal DNA
 datMaxDNA = myData %>% group_by(EH_ID) %>%
   dplyr::filter(Genome_copies_gFaeces == max(Genome_copies_gFaeces, na.rm = T)) %>%
   dplyr::select(EH_ID, dpi, Genome_copies_gFaeces, Mouse_genotype)%>% data.frame()
+names(datMaxDNA)[names(datMaxDNA)%in% "dpi"] <- "dpi_maxDNA"
+
 table(datMaxDNA$dpi)
 # 1.3 relative weight loss
 datMaxWL = myData %>% group_by(EH_ID) %>%
   filter(weightloss == max(weightloss, na.rm = T)) %>%
   dplyr::select(EH_ID, dpi, weightloss, Mouse_genotype)%>% data.frame()
+names(datMaxWL)[names(datMaxWL)%in% "dpi"] <- "dpi_maxWL"
+
 table(datMaxWL$dpi)
 
-datMaxALL = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype")], 
-                        datMaxDNA[c("EH_ID", "Genome_copies_gFaeces", "Mouse_genotype")]),
-                  datMaxWL[c("EH_ID", "weightloss", "Mouse_genotype")])
+datMaxALL = merge(merge(datMaxOPG[c("EH_ID", "OPG", "Mouse_genotype", "dpi_maxOPG")], 
+                        datMaxDNA[c("EH_ID", "Genome_copies_gFaeces", "Mouse_genotype", "dpi_maxDNA")]),
+                  datMaxWL[c("EH_ID", "weightloss", "Mouse_genotype","dpi_maxWL")])
 
 # ----------------------------
 # Q2(a): Does DNA predict a health effect on the host “overall” (e.g. maximum)?
@@ -118,24 +124,50 @@ par(mfrow= c(2,2))
 par(mfrow= c(1,1))
 
 # plot prediction
-d <- datMaxALL[c("OPG", "Genome_copies_gFaeces", "weightloss")]
+d <- datMaxALL[c("OPG", "Genome_copies_gFaeces", "weightloss",
+                 "dpi_maxDNA", "dpi_maxOPG", "dpi_maxWL")]
 
 d$predicted <- predict(modFull)   # Save the predicted values
 d$residuals <- residuals(modFull) # Save the residual values
 
 #https://drsimonj.svbtle.com/visualising-residuals
 #pdf(file = "fig/plotResidAlice_temp.pdf", width = 8, height = 5)
-plotResidAlice_temp <- d %>% 
-  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals) %>%  # Get data into shape
-  ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
-  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
-  geom_point(aes(color = residuals)) +
-  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
+# change: color by day of max weight loss
+d <- d %>% 
+  gather(key = "iv", value = "x", -weightloss, -predicted, -residuals, 
+         -dpi_maxOPG, -dpi_maxDNA, -dpi_maxWL) # Get data into shape
+d$dpi[d$iv %in% "OPG"] <- d$dpi_maxOPG[d$iv %in% "OPG"] 
+d$dpi[d$iv %in% "Genome_copies_gFaeces"] <- d$dpi_maxDNA[d$iv %in% "Genome_copies_gFaeces"] 
+d$dpi <- as.factor(d$dpi)
+
+plotResidAlice_temp_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
+  ggplot(aes(x = x, y = weightloss))+  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted),alpha = .2) +
+  geom_point(aes(fill = dpi, alpha = abs(residuals)), size = 2.5, shape=21, col=1) +
+  scale_alpha(range = c(0.1, 1), guide = F) +
+  scale_fill_manual(values = colores)+
   geom_point(aes(y = predicted), shape = 1) +
-  facet_grid(~ iv, scales = "free_x") +  # Split panels here by `iv`
-  theme_bw()
-#dev.off()
+  xlab("Genome copies per gram of faeces")+
+  ylab("Maximum weight loss (%)") +
+  theme_bw() + 
+  theme(text = element_text(size=16), legend.position = "none")
+plotResidAlice_temp_1
+
+plotResidAlice_temp_2 <- d[d$iv %in% "OPG",] %>%
+  ggplot(aes(x = x, y = weightloss))+  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted),alpha = .2) +
+  geom_point(aes(fill = dpi, alpha = abs(residuals)), size = 2.5, shape=21, col=1) +
+  scale_alpha(range = c(0.1, 1), guide = F) +
+  scale_fill_manual(values = colores)+
+  geom_point(aes(y = predicted), shape = 1) +
+  xlab("Oocysts per gram of faeces")+
+  ylab("Maximum weight loss (%)") +
+  theme_bw() +  
+  theme(text = element_text(size=16), legend.position = "none")
+plotResidAlice_temp_2
+
+plotResidAlice_temp <- ggarrange(plotResidAlice_temp_1, plotResidAlice_temp_2, ncol = 2, nrow = 1, 
+          labels = c("a", "b"))
 
 # save figure in a temp directory
 saveRDS(plotResidAlice_temp, "fig/plotResidAlice_temp.RDS")
@@ -330,5 +362,5 @@ pfinal <- plot_grid(p1 + theme(legend.position = "none"), p2 + theme(legend.posi
                    nrow = 2, rel_widths = c(1,1,0.3,1,1))
 
 #pdf("fig/Supplementary_temp_new.pdf", width = 15, height = 10)
-#pfinal
+pfinal
 #dev.off()
