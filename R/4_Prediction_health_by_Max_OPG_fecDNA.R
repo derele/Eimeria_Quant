@@ -150,8 +150,9 @@ plotResidAlice_temp_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
   xlab("Genome copies per gram of faeces")+
   ylab("Maximum weight loss (%)") +
   theme_bw() + 
+  labs(tag = "A)")+
   theme(text = element_text(size=16), legend.position = "none")
-plotResidAlice_temp_1
+#plotResidAlice_temp_1
 
 plotResidAlice_temp_2 <- d[d$iv %in% "OPG",] %>%
   ggplot(aes(x = x, y = weightloss))+  # Note use of `x` here and next line
@@ -163,11 +164,11 @@ plotResidAlice_temp_2 <- d[d$iv %in% "OPG",] %>%
   xlab("Oocysts per gram of faeces")+
   ylab("Maximum weight loss (%)") +
   theme_bw() +  
+  labs(tag = "B)")+
   theme(text = element_text(size=16), legend.position = "none")
-plotResidAlice_temp_2
+#plotResidAlice_temp_2
 
-plotResidAlice_temp <- ggarrange(plotResidAlice_temp_1, plotResidAlice_temp_2, ncol = 2, nrow = 1, 
-          labels = c("a", "b"))
+plotResidAlice_temp <- ggarrange(plotResidAlice_temp_1, plotResidAlice_temp_2, ncol = 2, nrow = 1)
 
 # save figure in a temp directory
 saveRDS(plotResidAlice_temp, "fig/plotResidAlice_temp.RDS")
