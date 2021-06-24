@@ -187,6 +187,23 @@ ResDemSusana_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>%
   xlab("Genome copies per gram of faeces")+
   ylab("Weight loss relative to DPI 0 (%)") +
   theme_bw() + 
+  labs(tag = "C)", fill= "DPI")+
+  theme(text = element_text(size=16), legend.position = "top")+ 
+  guides(fill = guide_legend(nrow = 1))
+
+##Extract legend
+legend <- cowplot::get_legend(ResDemSusana_1)
+
+##Remove legend
+ResDemSusana_1 <- d[d$iv %in% "Genome_copies_gFaeces",] %>% 
+  ggplot(aes(x = x, y = weightloss)) +  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(fill = dpi, alpha = abs(residuals)), size = 2.5, shape=21, col=1) +
+  scale_alpha(range = c(0.1, 1), guide = F) +
+  geom_point(aes(y = predicted), shape = 1) +
+  xlab("Genome copies per gram of faeces")+
+  ylab("Weight loss relative to DPI 0 (%)") +
+  theme_bw() + 
   labs(tag = "C)")+
   theme(text = element_text(size=16), legend.position = "none")
 
