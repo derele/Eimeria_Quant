@@ -223,6 +223,8 @@ ResDemSusana <- ggarrange(ResDemSusana_1, ResDemSusana_2, ncol = 2, nrow = 1)
 
 saveRDS(ResDemSusana, file="fig/ResDemSusana.rds")
 
+saveRDS(legend, file="fig/legend.rds")
+
 ggplot(sdtST, aes(x = logGC, y = weightloss)) +  # Set up canvas with outcome variable on y-axis
   geom_segment(aes(xend = logGC, yend = predicted), alpha = .2) +  # alpha to fade lines
   geom_point() +
